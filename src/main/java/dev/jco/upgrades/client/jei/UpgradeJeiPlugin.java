@@ -25,7 +25,7 @@ public final class UpgradeJeiPlugin implements IModPlugin {
     public UpgradeJeiPlugin() { instance = this; }
     @Override public ResourceLocation getPluginUid() { return ResourceLocation.parse("jco_upgrades:jei"); }
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
-        registration.addRecipeCategories(new UpgradeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new UpgradeJeiCategory(registration.getJeiHelpers()));
     }
     @Override public void registerRecipes(IRecipeRegistration registration) {
         displayed = read();

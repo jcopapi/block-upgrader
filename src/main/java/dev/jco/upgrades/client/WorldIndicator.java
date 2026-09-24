@@ -33,7 +33,7 @@ public final class WorldIndicator {
             var mc=Minecraft.getInstance();if(mc.player==null||mc.screen!=null||!(mc.hitResult instanceof net.minecraft.world.phys.BlockHitResult hit)||hit.getType()!=net.minecraft.world.phys.HitResult.Type.BLOCK)return;
             var p=lookup(hit.getBlockPos());if(p==null||!p.view().getBoolean("compact")||p.view().getBoolean("completed")||mc.player.position().distanceTo(Vec3.atCenterOf(p.pos()))>p.view().getDouble("range"))return;
             var data=p.view().copy();if(data.contains("remaining"))data.putLong("remaining",Math.max(0,data.getLong("remaining")-(long)(age(p.pos())*20)));
-            WorldLabels.draw(gui,Vec3.atCenterOf(p.pos()).add(0,.8,0),p.display(),p.remaining()>0?"x"+p.remaining():"Ready",data);
+            WorldLabels.draw(gui,Vec3.atCenterOf(p.pos()).add(0,.8,0),data);
         });
     }
 }

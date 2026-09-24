@@ -21,7 +21,7 @@ public final class WorldLabels {
         if(e.getStage()!=RenderLevelStageEvent.Stage.AFTER_LEVEL) return;
         projection=new Matrix4f(e.getProjectionMatrix());view=new Matrix4f(e.getModelViewMatrix());camera=e.getCamera().getPosition();
     }
-    public static void draw(GuiGraphics gui,Vec3 world,ItemStack display,String text,net.minecraft.nbt.CompoundTag data) {
+    public static void draw(GuiGraphics gui,Vec3 world,net.minecraft.nbt.CompoundTag data) {
         var mc=Minecraft.getInstance();if(projection==null||view==null||camera==null||mc.level==null||mc.player==null||mc.options.hideGui)return;
         double distance=world.distanceTo(camera);if(distance>20)return;
         var ray=mc.level.clip(new ClipContext(camera,world,ClipContext.Block.COLLIDER,ClipContext.Fluid.NONE,mc.player));
@@ -35,12 +35,8 @@ public final class WorldLabels {
         gui.pose().pushPose();
         try {
             gui.pose().translate(x,y,0);gui.pose().scale(scale,scale,1);
-            int textWidth=mc.font.width(text);
-            int left=-(textWidth+(display.isEmpty()?0:18))/2;
-            if(!display.isEmpty())gui.renderItem(display,left,-31);
-            gui.drawString(mc.font,text,left+(display.isEmpty()?0:18),-27,0xFFE5CEAA,true);
             var rows=data.getList("rows",10);int yy=-12;
-            for(var raw:rows){var row=(net.minecraft.nbt.CompoundTag)raw;if(row.getBoolean("material"))continue;int width=InputIcons.draw(gui,row.getString("input"),-28,yy+2);gui.renderItem(ItemStack.parseOptional(mc.level.registryAccess(),row.getCompound("icon")),-28+width,yy);gui.drawString(mc.font,row.getInt("have")+"/"+row.getInt("need"),-8+width,yy+4,0xFFE5CEAA);yy+=18;}
+            for(var raw:rows){var row=(net.minecraft.nbt.CompoundTag)raw;if(row.getBoolean("material"))continue;var count=row.getInt("have")+"/"+row.getInt("need");int iconWidth="BOTH".equals(row.getString("input"))?24:13;int left=-(iconWidth+16+4+mc.font.width(count))/2;int width=InputIcons.draw(gui,row.getString("input"),left,yy+2);gui.renderItem(ItemStack.parseOptional(mc.level.registryAccess(),row.getCompound("icon")),left+width,yy);gui.drawString(mc.font,count,left+width+19,yy+4,0xFFE5CEAA,true);yy+=18;}
             if(data.contains("duration")){float progress=1-data.getLong("remaining")/(float)Math.max(1,data.getInt("duration"));gui.fill(-25,yy,25,yy+3,0xAA303942);gui.fill(-25,yy,-25+(int)(50*Math.clamp(progress,0,1)),yy+3,0xFFBFA46E);}
 
         } finally {gui.pose().popPose();}
