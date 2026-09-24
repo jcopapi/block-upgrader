@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:copper_chest",
+    "result":  "sophisticatedstorage:iron_chest",
+    "title":  "Upgrade to Iron Chest",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:iron_ingot",
+                          "count":  8
+                      },
+                      {
+                          "item":  "minecraft:glass",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

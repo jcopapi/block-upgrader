@@ -1,0 +1,35 @@
+{
+  "source": "ironfurnaces:copper_furnace",
+  "result": "ironfurnaces:iron_furnace",
+  "title": "Upgrade to Iron Furnace",
+  "description": "A faster furnace tier.",
+  "required_mods": [
+    "ironfurnaces"
+  ],
+  "materials": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 6
+    },
+    {
+      "item": "minecraft:glass",
+      "count": 2
+    }
+  ],
+  "build_time": 1200,
+  "accelerators": [
+    {
+      "kind": "tool",
+      "item": "#minecraft:pickaxes",
+      "actions": 3,
+      "reduction": 1200,
+      "input": "RIGHT",
+      "display_item": "minecraft:iron_pickaxe"
+    }
+  ],
+  "transfer": "copy_data",
+  "downgrade": {
+    "tool": "#minecraft:pickaxes",
+    "hits": 3
+  }
+}

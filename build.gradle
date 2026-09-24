@@ -1,0 +1,38 @@
+plugins {
+    id 'java-library'
+    id 'net.neoforged.moddev' version '2.0.144'
+}
+
+group = 'dev.jco.upgrades'
+version = mod_version
+base.archivesName = 'jco-upgrades'
+
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
+repositories { mavenCentral() }
+neoForge { version = neo_version }
+
+// These APIs are optional at runtime. Use official mod JARs as compile-only inputs.
+// Set BLOCK_UPGRADER_MODS_DIR to a Minecraft mods directory or place them in local-mods/.
+def optionalModsDir = file(System.getenv('BLOCK_UPGRADER_MODS_DIR') ?: 'local-mods')
+def optionalNames = [
+    'kubejs-neoforge-*.jar',
+    'rhino-*.jar',
+    'create-*.jar',
+    'sophisticatedstorage-*.jar',
+    'sophisticatedcore-*.jar'
+]
+def optionalJars = fileTree(optionalModsDir) { include optionalNames }
+if (optionalNames.any { pattern -> fileTree(optionalModsDir) { include pattern }.isEmpty() }) {
+    throw new GradleException("Missing compile-only mod JARs in ${optionalModsDir}. See README.md or set BLOCK_UPGRADER_MODS_DIR.")
+}
+dependencies { compileOnly files(optionalJars) }
+
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
+processResources {
+    inputs.property('version', project.version)
+    filesMatching('META-INF/neoforge.mods.toml') { expand(version: project.version) }
+}

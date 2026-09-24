@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:gold_chest",
+    "result":  "sophisticatedstorage:diamond_chest",
+    "title":  "Upgrade to Diamond Chest",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:diamond",
+                          "count":  8
+                      },
+                      {
+                          "item":  "minecraft:obsidian",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:diamond_chest",
+    "result":  "sophisticatedstorage:netherite_chest",
+    "title":  "Upgrade to Netherite Chest",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:netherite_ingot",
+                          "count":  2
+                      },
+                      {
+                          "item":  "minecraft:obsidian",
+                          "count":  4
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

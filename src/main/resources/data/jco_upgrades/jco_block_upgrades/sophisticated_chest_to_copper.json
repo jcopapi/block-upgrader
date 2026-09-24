@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:chest",
+    "result":  "sophisticatedstorage:copper_chest",
+    "title":  "Upgrade to Copper Chest",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:copper_ingot",
+                          "count":  8
+                      },
+                      {
+                          "item":  "minecraft:oak_planks",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

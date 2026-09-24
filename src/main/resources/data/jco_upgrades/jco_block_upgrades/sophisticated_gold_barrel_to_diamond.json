@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:gold_barrel",
+    "result":  "sophisticatedstorage:diamond_barrel",
+    "title":  "Upgrade to Diamond Barrel",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:diamond",
+                          "count":  6
+                      },
+                      {
+                          "item":  "minecraft:obsidian",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

@@ -1,0 +1,16 @@
+{
+  "required": true,
+  "package": "dev.jco.upgrades.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "UpgradeRemovalMixin",
+    "IncompleteTickerMixin",
+    "CreateGlueMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "client": [
+    "CreateGlueClientMixin"
+  ]
+}

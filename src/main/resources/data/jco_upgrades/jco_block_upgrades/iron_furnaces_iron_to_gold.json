@@ -1,0 +1,35 @@
+{
+  "source": "ironfurnaces:iron_furnace",
+  "result": "ironfurnaces:gold_furnace",
+  "title": "Upgrade to Gold Furnace",
+  "description": "A faster furnace tier.",
+  "required_mods": [
+    "ironfurnaces"
+  ],
+  "materials": [
+    {
+      "item": "minecraft:gold_ingot",
+      "count": 8
+    },
+    {
+      "item": "minecraft:gold_block",
+      "count": 1
+    }
+  ],
+  "build_time": 1200,
+  "accelerators": [
+    {
+      "kind": "tool",
+      "item": "#minecraft:pickaxes",
+      "actions": 3,
+      "reduction": 1200,
+      "input": "RIGHT",
+      "display_item": "minecraft:iron_pickaxe"
+    }
+  ],
+  "transfer": "copy_data",
+  "downgrade": {
+    "tool": "#minecraft:pickaxes",
+    "hits": 3
+  }
+}

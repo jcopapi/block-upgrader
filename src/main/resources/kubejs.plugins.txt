@@ -1,0 +1,1 @@
+dev.jco.upgrades.kubejs.UpgradesPlugin

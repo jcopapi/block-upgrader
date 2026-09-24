@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:copper_barrel",
+    "result":  "sophisticatedstorage:iron_barrel",
+    "title":  "Upgrade to Iron Barrel",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:iron_ingot",
+                          "count":  6
+                      },
+                      {
+                          "item":  "minecraft:glass",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

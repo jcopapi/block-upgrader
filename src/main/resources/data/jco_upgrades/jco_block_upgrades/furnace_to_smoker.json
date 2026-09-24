@@ -1,0 +1,36 @@
+{
+  "source": "minecraft:furnace",
+  "result": "minecraft:smoker",
+  "title": "Upgrade to Smoker",
+  "description": "Cooks food faster than a furnace.",
+  "materials": [
+    {
+      "item": "#minecraft:logs",
+      "count": 4
+    },
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 1
+    },
+    {
+      "item": "minecraft:coal",
+      "count": 2
+    }
+  ],
+  "build_time": 1200,
+  "accelerators": [
+    {
+      "kind": "tool",
+      "item": "#minecraft:pickaxes",
+      "actions": 3,
+      "reduction": 1200,
+      "input": "RIGHT",
+      "display_item": "minecraft:iron_pickaxe"
+    }
+  ],
+  "transfer": "copy_data",
+  "downgrade": {
+    "tool": "#minecraft:pickaxes",
+    "hits": 3
+  }
+}

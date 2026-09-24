@@ -1,0 +1,23 @@
+{
+    "source":  "sophisticatedstorage:iron_chest",
+    "result":  "sophisticatedstorage:gold_chest",
+    "title":  "Upgrade to Gold Chest",
+    "required_mods":  [
+                          "sophisticatedstorage"
+                      ],
+    "materials":  [
+                      {
+                          "item":  "minecraft:gold_ingot",
+                          "count":  8
+                      },
+                      {
+                          "item":  "minecraft:glass",
+                          "count":  2
+                      }
+                  ],
+    "transfer":  "sophisticated_storage",
+    "downgrade":  {
+                      "tool":  "#minecraft:axes",
+                      "hits":  3
+                  }
+}

@@ -1,0 +1,36 @@
+{
+  "source": "minecraft:furnace",
+  "result": "minecraft:blast_furnace",
+  "title": "Upgrade to Blast Furnace",
+  "description": "Smelts ores faster than a furnace.",
+  "materials": [
+    {
+      "item": "minecraft:iron_ingot",
+      "count": 5
+    },
+    {
+      "item": "minecraft:smooth_stone",
+      "count": 3
+    },
+    {
+      "item": "minecraft:coal",
+      "count": 2
+    }
+  ],
+  "build_time": 1200,
+  "accelerators": [
+    {
+      "kind": "tool",
+      "item": "#minecraft:pickaxes",
+      "actions": 3,
+      "reduction": 1200,
+      "input": "RIGHT",
+      "display_item": "minecraft:iron_pickaxe"
+    }
+  ],
+  "transfer": "copy_data",
+  "downgrade": {
+    "tool": "#minecraft:pickaxes",
+    "hits": 3
+  }
+}
