@@ -12,7 +12,7 @@ The client config `config/block_upgrader-client.toml` has `hudScale` (0.5–2.0,
 
 ## Just Enough Items
 
-With JEI installed, open the **Block Upgrader** recipe category from a source block's uses, a result block's recipes, or a required material. Each card shows the placed source block, result, materials and quantities, and any tool actions or build time. Hover the work row for extra actions and transfer details. Item tags cycle through valid alternatives, so a generic Pickaxe or Axe requirement can be found through any matching tool. Recipes with more than six materials keep the additional ingredients searchable and list them when you hover **+N more**.
+With JEI installed, open the **Block Upgrader** recipe category from a source block's uses, a result block's recipes, or a required material. The compact, vanilla-style view shows block → upgraded block, material icons and counts, then tool actions with mouse-button icons. A clock marks timed recipes. Hover the arrow for the recipe name and description, or a `+N` marker for additional materials or actions. Item tags cycle through valid alternatives, so any matching Pickaxe or Axe can be found in JEI.
 
 JEI receives the active recipe catalog from the server. Datapack and KubeJS overrides therefore appear correctly in multiplayer and refresh after `/reload` or a successful script reload. JEI is optional; the block-upgrade HUD and gameplay work without it.
 
