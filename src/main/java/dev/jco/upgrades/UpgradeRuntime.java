@@ -86,7 +86,7 @@ public final class UpgradeRuntime {
                 var blockItem=definition.source().asItem().getDefaultInstance();if(!player.getInventory().add(blockItem))player.drop(blockItem,false);
             }else{
             if(!p.rollbackReady||!InventorySafety.isEmpty(level.getBlockEntity(pos))){
-                player.displayClientMessage(Component.literal("Cannot safely undo this construction: legacy state or transferred inventory. Materials already built into it are retained."),true);return false;
+                player.displayClientMessage(Component.literal("Cannot safely undo this construction: legacy state or transferred inventory. Materials already built into it are retained."),false);return false;
             }
             var current=level.getBlockState(pos);if(!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(current.getBlock()).toString().equals(p.target))return false;
             var source=net.minecraft.nbt.NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK),p.sourceState);
@@ -121,7 +121,7 @@ public final class UpgradeRuntime {
         e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         if(!player.mayBuild()||!level.mayInteract(player,pos)||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>Math.pow(Math.min(d.hudRange(),player.blockInteractionRange()+1),2))return;
         if(clipboard) {
-            try{dev.jco.upgrades.integration.CreateClipboard.save(stack,d);player.swinging=false;player.swing(e.getHand(),true);player.displayClientMessage(Component.literal("Saved: "+d.title()),true);level.playSound(null,pos,net.minecraft.sounds.SoundEvents.BOOK_PAGE_TURN,net.minecraft.sounds.SoundSource.PLAYERS,.65F,1.2F);}catch(RuntimeException ex){error(player,ex);}return;
+            try{dev.jco.upgrades.integration.CreateClipboard.save(stack,d);player.swinging=false;player.swing(e.getHand(),true);level.playSound(null,pos,net.minecraft.sounds.SoundEvents.BOOK_PAGE_TURN,net.minecraft.sounds.SoundSource.PLAYERS,.65F,1.2F);}catch(RuntimeException ex){error(player,ex);}return;
         }
         var p=progress(level,pos,d,false);if(p!=null&&p.incomplete&&!p.fingerprint.equals(d.fingerprint())){error(player,new IllegalStateException("Incomplete definition changed; restore definition or cancel administratively"));return;}
         if(p==null)p=new UpgradeData.Progress(d);
@@ -278,7 +278,7 @@ public final class UpgradeRuntime {
     }
     private static void error(ServerPlayer player, RuntimeException e) {
         LogUtils.getLogger().error("Block Upgrader failed",e);
-        if(player!=null)player.displayClientMessage(Component.literal("Upgrade paused: "+e.getMessage()),true);
+        if(player!=null)player.displayClientMessage(Component.literal("Upgrade paused: "+e.getMessage()),false);
     }
     private static final Map<java.util.UUID,LinkedHashMap<net.minecraft.core.GlobalPos,Long>> WATCHED=new HashMap<>();
     public static void clearWatching() {WATCHED.clear();SELECTION.clear();}
