@@ -1,6 +1,6 @@
-﻿# Block Upgrader
+# Block Upgrader
 
-A data-driven, reversible in-world block upgrade system for Minecraft 1.21.1 / NeoForge 21.1.x. Minecraft and NeoForge are the only required mods. KubeJS, Create, Sophisticated Storage and Iron Furnaces are detected when installed.
+A data-driven, reversible in-world block upgrade system for Minecraft 1.21.1 / NeoForge 21.1.x. Minecraft and NeoForge are the only required mods. KubeJS, Create, Sophisticated Storage, Iron Furnaces and Just Enough Items (JEI) are detected when installed.
 
 ## Playing
 
@@ -9,6 +9,12 @@ Look at a supported block while holding Shift to open its recipe. Scroll while h
 Shift-right-click an unfinished upgrade with an empty hand to cancel and return contributed materials. Once complete, hold Shift or a matching downgrade tool to see the reversal panel. Right-click three times with the configured tool to restore the previous block and receive its deposited materials. Full inventories prevent reversal. Upgrade history follows the block when broken and replaced, including its previous block state. The HUD displays generic tool names for item tags: for example, any pickaxe appears as **Pickaxe**.
 
 The client config `config/jco_upgrades-client.toml` has `hudScale` (0.5–2.0, default 1.0). This scales the recipe panels without changing server recipes. `build_time: 0` removes a recipe's timer.
+
+## Just Enough Items
+
+With JEI installed, open the **Block Upgrader** recipe category from a source block's uses, a result block's recipes, or a required material. Each card shows the placed source block, result, materials and quantities, and any tool actions or build time. Hover the work row for extra actions and transfer details. Item tags cycle through valid alternatives, so a generic Pickaxe or Axe requirement can be found through any matching tool. Recipes with more than six materials keep the additional ingredients searchable and list them when you hover **+N more**.
+
+JEI receives the active recipe catalog from the server. Datapack and KubeJS overrides therefore appear correctly in multiplayer and refresh after `/reload` or a successful script reload. JEI is optional; the block-upgrade HUD and gameplay work without it.
 
 ## Built-in examples
 
@@ -96,6 +102,6 @@ With Create installed, hold its clipboard and right-click a supported block to a
 
 Build with Java 21 and Gradle using `./gradlew build` (`.\gradlew.bat build` on Windows). The JAR is `build/libs/jco-upgrades-<version>.jar`.
 
-The source references optional integration APIs at compile time but does not bundle or require them at runtime. To compile, put the NeoForge 1.21.1 JARs for KubeJS (`2101.7.2-build.377`), Rhino (`2101.2.8-build.91`), Create (`6.0.10`), Sophisticated Storage (`1.5.91.2127`), and Sophisticated Core (`1.5.1.2341`) in `local-mods/`, or point `BLOCK_UPGRADER_MODS_DIR` at a directory containing them. Gradle ignores that directory for Git. The mod has also been built in a fresh single-module checkout with these exact JARs.
+The source references optional integration APIs at compile time but does not bundle or require them at runtime. To compile, put the NeoForge 1.21.1 JARs for KubeJS (`2101.7.2-build.377`), Rhino (`2101.2.8-build.91`), Create (`6.0.10`), Sophisticated Storage (`1.5.91.2127`), Sophisticated Core (`1.5.1.2341`), and JEI (`19.57.0.447`) in `local-mods/`, or point `BLOCK_UPGRADER_MODS_DIR` at a directory containing them. Gradle ignores that directory for Git.
 
 Source code and the distributed JAR are licensed under MIT; see `LICENSE`.

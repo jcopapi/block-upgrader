@@ -47,6 +47,14 @@ public final class SophisticatedStorage {
         return stack;
     }
 
+    public static ItemStack previewStatic(ItemStack stack,CompoundTag resultData) {
+        if (!(stack.getItem() instanceof net.p3pp3rf1y.sophisticatedstorage.item.WoodStorageBlockItem)
+            || !resultData.contains("woodType")) return stack;
+        String name = resultData.getString("woodType");
+        var type = WoodType.values().filter(value -> value.name().equals(name) || ("minecraft:" + value.name()).equals(name)).findFirst();
+        return type.map(value -> net.p3pp3rf1y.sophisticatedstorage.item.WoodStorageBlockItem.setWoodType(stack, value)).orElse(stack);
+    }
+
     public static boolean isEmpty(BlockEntity entity) {
         if (!(entity instanceof StorageBlockEntity storage)) return false;
         var wrapper = storage.getStorageWrapper();

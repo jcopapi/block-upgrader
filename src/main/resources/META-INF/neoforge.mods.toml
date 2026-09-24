@@ -47,3 +47,10 @@ type="optional"
 versionRange="[6.0.10,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.jco_upgrades]]
+modId="jei"
+type="optional"
+versionRange="[19,)"
+ordering="AFTER"
+side="CLIENT"

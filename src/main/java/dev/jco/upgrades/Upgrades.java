@@ -31,7 +31,7 @@ public final class Upgrades {
         replace(merged);
     }
     /** Datapack IDs are the baseline; server scripts with the same ID override them. */
-    public static synchronized void replaceDatapack(Map<String, UpgradeDefinition> values) {datapack=Collections.unmodifiableMap(new LinkedHashMap<>(values));rebuild();}
-    public static synchronized void replaceScripts(Map<String, UpgradeDefinition> values,Set<String> disabled) {scripts=Collections.unmodifiableMap(new LinkedHashMap<>(values));scriptDisabled=Set.copyOf(disabled);rebuild();}
+    public static synchronized void replaceDatapack(Map<String, UpgradeDefinition> values) {datapack=Collections.unmodifiableMap(new LinkedHashMap<>(values));rebuild();RecipeCatalog.broadcastLater();}
+    public static synchronized void replaceScripts(Map<String, UpgradeDefinition> values,Set<String> disabled) {scripts=Collections.unmodifiableMap(new LinkedHashMap<>(values));scriptDisabled=Set.copyOf(disabled);rebuild();RecipeCatalog.broadcastLater();}
     public static synchronized void clearSources() {datapack=Map.of();scripts=Map.of();scriptDisabled=Set.of();replace(Map.of());}
 }

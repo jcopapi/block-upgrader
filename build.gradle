@@ -19,7 +19,8 @@ def optionalNames = [
     'rhino-*.jar',
     'create-*.jar',
     'sophisticatedstorage-*.jar',
-    'sophisticatedcore-*.jar'
+    'sophisticatedcore-*.jar',
+    'jei-1.21.1-neoforge-*.jar'
 ]
 def optionalJars = fileTree(optionalModsDir) { include optionalNames }
 if (optionalNames.any { pattern -> fileTree(optionalModsDir) { include pattern }.isEmpty() }) {
