@@ -5,7 +5,7 @@ plugins {
 
 group = 'dev.jco.upgrades'
 version = mod_version
-base.archivesName = 'jco-upgrades'
+base.archivesName = 'block-upgrader'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 repositories { mavenCentral() }

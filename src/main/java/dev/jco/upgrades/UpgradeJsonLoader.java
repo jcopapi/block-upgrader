@@ -32,7 +32,7 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
             }
         });
         Upgrades.replaceDatapack(definitions);
-        LOGGER.info("Loaded {} JCO block upgrades from datapacks", definitions.size());
+        LOGGER.info("Loaded {} Block Upgrader recipes from datapacks", definitions.size());
     }
 
     /** Returns null for a disabled definition or an absent optional mod. */

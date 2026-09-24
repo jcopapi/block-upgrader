@@ -277,7 +277,7 @@ public final class UpgradeRuntime {
         }
     }
     private static void error(ServerPlayer player, RuntimeException e) {
-        LogUtils.getLogger().error("JCO upgrade failed",e);
+        LogUtils.getLogger().error("Block Upgrader failed",e);
         if(player!=null)player.displayClientMessage(Component.literal("Upgrade paused: "+e.getMessage()),true);
     }
     private static final Map<java.util.UUID,LinkedHashMap<net.minecraft.core.GlobalPos,Long>> WATCHED=new HashMap<>();

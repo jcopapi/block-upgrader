@@ -12,6 +12,6 @@ public final class UpgradeClientConfig {
     public static final ModConfigSpec SPEC = BUILDER.build();
 
     private UpgradeClientConfig() {}
-    public static void register(ModContainer container) { container.registerConfig(ModConfig.Type.CLIENT, SPEC); }
+    public static void register(ModContainer container) { container.registerConfig(ModConfig.Type.CLIENT, SPEC, "block_upgrader-client.toml"); }
     public static float hudScale() { return HUD_SCALE.get().floatValue(); }
 }

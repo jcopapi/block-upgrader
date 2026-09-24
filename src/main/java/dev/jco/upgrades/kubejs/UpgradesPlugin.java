@@ -17,7 +17,7 @@ public final class UpgradesPlugin implements KubeJSPlugin {
     @Override public void afterScriptsLoaded(ScriptManager m) {
         if(m.scriptType==ScriptType.SERVER) {
             if(!invalid && m.scriptType.console.errors.isEmpty()) Upgrades.replaceScripts(candidate,disabled);
-            else m.scriptType.console.warn("JCO Upgrades: reload failed; previous definitions retained");
+            else m.scriptType.console.warn("Block Upgrader: reload failed; previous definitions retained");
             candidate=null;
             disabled=null;
         }

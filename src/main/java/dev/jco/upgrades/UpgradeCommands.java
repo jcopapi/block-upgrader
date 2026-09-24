@@ -7,7 +7,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 
 public final class UpgradeCommands {
     public static void register(RegisterCommandsEvent e) {
-        e.getDispatcher().register(Commands.literal("jco_upgrades").requires(s->s.hasPermission(2))
+        e.getDispatcher().register(Commands.literal("block_upgrader").requires(s->s.hasPermission(2))
             .then(Commands.literal("status").executes(c->{
                 var data=UpgradeData.get(c.getSource().getLevel());
                 c.getSource().sendSuccess(()->Component.literal("Definitions: "+Upgrades.definitions().keySet()+"; active upgrades in dimension: "+data.entries.size()),false); return data.entries.size();

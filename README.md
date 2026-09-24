@@ -8,7 +8,7 @@ Look at a supported block while holding Shift to open its recipe. Scroll while h
 
 Shift-right-click an unfinished upgrade with an empty hand to cancel and return contributed materials. Once complete, hold Shift or a matching downgrade tool to see the reversal panel. Right-click three times with the configured tool to restore the previous block and receive its deposited materials. Full inventories prevent reversal. Upgrade history follows the block when broken and replaced, including its previous block state. The HUD displays generic tool names for item tags: for example, any pickaxe appears as **Pickaxe**.
 
-The client config `config/jco_upgrades-client.toml` has `hudScale` (0.5–2.0, default 1.0). This scales the recipe panels without changing server recipes. `build_time: 0` removes a recipe's timer.
+The client config `config/block_upgrader-client.toml` has `hudScale` (0.5–2.0, default 1.0). This scales the recipe panels without changing server recipes. `build_time: 0` removes a recipe's timer.
 
 ## Just Enough Items
 
@@ -95,11 +95,11 @@ To make an ordinary block require construction when placed, set `placed_incomple
 
 This uses the normal Smithing Table item. Placement marks that instance unfinished; the table cannot be used until its actions and any configured materials are complete. Any pre-existing table is unaffected. Recipes may add `materials` and `build_time`; materials deposited in an unfinished block are dropped if it is broken. To apply this behavior to another block, change both endpoint IDs. KubeJS can set the same rule with `.block('minecraft:smithing_table').result('minecraft:smithing_table').placedIncomplete(true)` and can override or disable the bundled recipe by ID. Placement recipes cannot transfer block-entity data or produce a different block; use an ordinary upgrade recipe for transformations.
 
-With Create installed, hold its clipboard and right-click a supported block to append the selected material list; the clipboard hint appears in the HUD. `/jco_upgrades status` and `/jco_upgrades cancel` are administrator commands.
+With Create installed, hold its clipboard and right-click a supported block to append the selected material list; the clipboard hint appears in the HUD. `/block_upgrader status` and `/block_upgrader cancel` are administrator commands.
 
 ## Build and license
 
-Build with Java 21 and Gradle using `./gradlew build` (`.\gradlew.bat build` on Windows). The JAR is `build/libs/jco-upgrades-<version>.jar`.
+Build with Java 21 and Gradle using `./gradlew build` (`.\gradlew.bat build` on Windows). The JAR is `build/libs/block-upgrader-<version>.jar`.
 
 The source references optional integration APIs at compile time but does not bundle or require them at runtime. To compile, put the NeoForge 1.21.1 JARs for KubeJS (`2101.7.2-build.377`), Rhino (`2101.2.8-build.91`), Create (`6.0.10`), Sophisticated Storage (`1.5.91.2127`), Sophisticated Core (`1.5.1.2341`), and JEI (`19.57.0.447`) in `local-mods/`, or point `BLOCK_UPGRADER_MODS_DIR` at a directory containing them. Gradle ignores that directory for Git.
 
