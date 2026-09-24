@@ -18,7 +18,7 @@ JEI receives the active recipe catalog from the server. Datapack and KubeJS over
 
 ## Built-in examples
 
-The JAR includes 23 datapack recipes. The base game provides Furnace → Blast Furnace and Furnace → Smoker. Both require multiple materials, have short descriptions, build for 1,200 ticks, and can be accelerated by three right-clicks with any pickaxe.
+The JAR includes 24 datapack recipes. The base game provides Furnace → Blast Furnace and Furnace → Smoker. Both require multiple materials, have short descriptions, build for 1,200 ticks, and can be accelerated by three right-clicks with any pickaxe. A newly placed Smithing Table starts unfinished: right-click it three times with any pickaxe to make it usable. Existing tables remain usable. Breaking an unfinished table returns the ordinary table item; placing it again starts a fresh construction. Shift-right-clicking with an empty hand picks up an unfinished table and returns contributed materials.
 
 With Sophisticated Storage installed, chests and barrels progress through base → copper → iron → gold → diamond → netherite. They require two materials per tier, convert instantly, and preserve inventory, upgrades, and source wood. The preview copies the source wood and tint to the result icon.
 
@@ -51,7 +51,7 @@ Place a definition in `data/<namespace>/jco_block_upgrades/<name>.json`. The ID 
 }
 ```
 
-Fields: `enabled`, `required_mods`, `source`, `result` or `outputs`, `title`, `description`, `display_item`, `hud_range`, `materials`, `stages`, `build_time`, `manual_completes`, `accelerators`, `preserve_properties`, `transfer`, `result_data`, `remove_block_on_complete`, `completion_feedback`, and `downgrade`. Select items by registry ID or item tag (`#minecraft:pickaxes`). Stage types are `TOOL_ACTION` and `ITEM_APPLICATION`. Stage and accelerator inputs can be `LEFT`, `RIGHT`, or `BOTH`. Feedback supports sound, particles, impact, icon, cooldown and completion effects. The included JSON files provide working combinations.
+Fields: `enabled`, `required_mods`, `source`, `result` or `outputs`, `placed_incomplete`, `title`, `description`, `display_item`, `hud_range`, `materials`, `stages`, `build_time`, `manual_completes`, `accelerators`, `preserve_properties`, `transfer`, `result_data`, `remove_block_on_complete`, `completion_feedback`, and `downgrade`. Select items by registry ID or item tag (`#minecraft:pickaxes`). Stage types are `TOOL_ACTION` and `ITEM_APPLICATION`. Stage and accelerator inputs can be `LEFT`, `RIGHT`, or `BOTH`. Feedback supports sound, particles, impact, icon, cooldown and completion effects. The included JSON files provide working combinations.
 
 `transfer` supports `none`, `copy_data`, `copy_inventory`, and `sophisticated_storage`. With `none`, nonempty source inventories block conversion. `copy_data` is for block entities that understand the same saved data, `copy_inventory` maps source slots to target slots without copying processing timers, and `sophisticated_storage` handles capacity and contents of compatible Sophisticated tiers. Source inventories are restored on failed conversion. `result_data` is a JSON object merged into the new block entity after transfer. It cannot replace `id`, `x`, `y`, or `z`.
 
@@ -80,21 +80,20 @@ BlockUpgrades.create('pack:oak_copper_chest', upgrade => {
 })
 ```
 
-To make a placed *incomplete* block (an example for pack authors, **not shipped**), use a repair stage:
+To make an ordinary block require construction when placed, set `placed_incomplete` to `true` with the same `source` and `result`. The bundled Smithing Table recipe is a working example:
 
 ```json
 {
-  "source": "minecraft:damaged_anvil",
-  "result": "minecraft:anvil",
-  "title": "Repair Anvil",
-  "materials": [{"item": "minecraft:iron_ingot", "count": 2}],
-  "stages": [{"type": "TOOL_ACTION", "item": "#jco:hammers",
-              "actions": 3, "input": "RIGHT"}],
-  "downgrade": {"tool": "#jco:hammers", "hits": 3}
+  "source": "minecraft:smithing_table",
+  "result": "minecraft:smithing_table",
+  "placed_incomplete": true,
+  "title": "Finish Smithing Table",
+  "stages": [{"type": "TOOL_ACTION", "item": "#minecraft:pickaxes",
+              "actions": 3, "input": "RIGHT"}]
 }
 ```
 
-Here, the damaged anvil is placed normally; after adding iron, it becomes an unfinished anvil until the work actions are done. Use a tag supplied by your pack for `#jco:hammers`, or replace it with a concrete item. This recipe is deliberately absent from the default datapack.
+This uses the normal Smithing Table item. Placement marks that instance unfinished; the table cannot be used until its actions and any configured materials are complete. Any pre-existing table is unaffected. Recipes may add `materials` and `build_time`; materials deposited in an unfinished block are dropped if it is broken. To apply this behavior to another block, change both endpoint IDs. KubeJS can set the same rule with `.block('minecraft:smithing_table').result('minecraft:smithing_table').placedIncomplete(true)` and can override or disable the bundled recipe by ID. Placement recipes cannot transfer block-entity data or produce a different block; use an ordinary upgrade recipe for transformations.
 
 With Create installed, hold its clipboard and right-click a supported block to append the selected material list; the clipboard hint appears in the HUD. `/jco_upgrades status` and `/jco_upgrades cancel` are administrator commands.
 

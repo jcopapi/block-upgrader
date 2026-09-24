@@ -22,6 +22,7 @@ public final class UpgradeMod {
         });
         bus.addListener((RegisterPayloadHandlersEvent e)->e.registrar("4").playToClient(ImpactPayload.TYPE,ImpactPayload.CODEC,(p,c)->c.enqueueWork(()->dev.jco.upgrades.client.BlockImpact.accept(p))));
         NeoForge.EVENT_BUS.addListener(UpgradeRuntime::chunk);
+        NeoForge.EVENT_BUS.addListener(UpgradeRuntime::placed);
         NeoForge.EVENT_BUS.addListener(UpgradeRuntime::resumeOutputs);
         NeoForge.EVENT_BUS.addListener(net.neoforged.bus.api.EventPriority.HIGHEST,UpgradeRuntime::interact);
         NeoForge.EVENT_BUS.addListener(UpgradeRuntime::tick);

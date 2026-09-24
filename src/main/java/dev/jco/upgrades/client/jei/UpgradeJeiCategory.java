@@ -39,9 +39,9 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, UpgradeJeiRecipe recipe, IFocusGroup focuses) {
         builder.addInputSlot(12, 38).addItemStack(recipe.source()).setStandardSlotBackground()
-            .addRichTooltipCallback((slot, tooltip) -> tooltip.add(Component.literal("Placed block")));
+            .addRichTooltipCallback((slot, tooltip) -> tooltip.add(Component.literal(recipe.placedIncomplete() ? "Place to begin construction" : "Placed block")));
         builder.addOutputSlot(150, 38).addItemStack(recipe.result()).setOutputSlotBackground()
-            .addRichTooltipCallback((slot, tooltip) -> tooltip.add(Component.literal("Upgrade result")));
+            .addRichTooltipCallback((slot, tooltip) -> tooltip.add(Component.literal(recipe.placedIncomplete() ? "Usable after construction" : "Upgrade result")));
         for (int i = 1; i < recipe.outputs().size(); i++)
             builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT).addItemStack(recipe.outputs().get(i));
         for (int i = 0; i < recipe.materials().size(); i++) {
@@ -86,11 +86,11 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
         gui.drawString(font, font.plainSubstrByWidth(recipe.title(), WIDTH - 16), 8, 7, GOLD, false);
         if (!recipe.description().isBlank())
             gui.drawString(font, font.plainSubstrByWidth(recipe.description(), WIDTH - 16), 8, 19, MUTED, false);
-        else gui.drawString(font, "IN-WORLD TRANSFORMATION", 8, 19, MUTED, false);
+        else gui.drawString(font, recipe.placedIncomplete() ? "BUILD AFTER PLACEMENT" : "IN-WORLD TRANSFORMATION", 8, 19, MUTED, false);
         gui.fill(39, 47, 138, 49, 0xFF746282);
         gui.fill(132, 44, 139, 52, 0xFF746282);
-        gui.drawString(font, "SOURCE", 7, 61, MUTED, false);
-        gui.drawString(font, recipe.outputs().isEmpty() ? "RESULT" : "OUTPUT", 139, 61, MUTED, false);
+        gui.drawString(font, recipe.placedIncomplete() ? "PLACE" : "SOURCE", 7, 61, MUTED, false);
+        gui.drawString(font, recipe.placedIncomplete() ? "READY" : recipe.outputs().isEmpty() ? "RESULT" : "OUTPUT", 139, 61, MUTED, false);
         gui.drawString(font, "MATERIALS", 7, 78, GOLD, false);
         for (int i = 0; i < Math.min(6, recipe.materials().size()); i++) {
             String count = Integer.toString(recipe.materials().get(i).count());

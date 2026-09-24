@@ -11,7 +11,9 @@ public final class UpgradeDefinition {
     public UpgradeDefinition downgrade(String tool,int hits){editable();net.minecraft.resources.ResourceLocation.parse(tool.startsWith("#")?tool.substring(1):tool);if(hits<1||hits>1000000)throw new IllegalArgumentException("Downgrade hits 1..1000000");reverseTool=tool;reverseHits=hits;return this;}
     public String reverseTool(){return reverseTool;}public int reverseHits(){return reverseHits;}
 
-    private boolean manualCompletes;public UpgradeDefinition manualCompletes(boolean value){editable();manualCompletes=value;return this;}public boolean manualCompletes(){return manualCompletes;}
+    private boolean manualCompletes, placedIncomplete;public UpgradeDefinition manualCompletes(boolean value){editable();manualCompletes=value;return this;}public boolean manualCompletes(){return manualCompletes;}
+    /** Begin construction when a player places the ordinary source block. */
+    public UpgradeDefinition placedIncomplete(boolean value){editable();placedIncomplete=value;return this;}public boolean placedIncomplete(){return placedIncomplete;}
     public record Material(StackMatcher item, int count, Feedback feedback) {}
     public record Stage(String type, StackMatcher item, int actions, int consume, int damage, Feedback feedback) {}
     public final String id;
@@ -102,8 +104,10 @@ public final class UpgradeDefinition {
     public String transferMode(){return transferMode;}
     private static void positive(int n) { if (n < 1 || n > 1000000) throw new IllegalArgumentException("Count must be 1..1000000"); }
     public void freeze() {
-        if (source == null || (target == null && outputs.isEmpty() && onComplete==null) || source == target || (materials.isEmpty() && stages.isEmpty() && buildTime==0))
-            throw new IllegalArgumentException(id + ": distinct source/result and at least one material or stage required");
+        if (source == null || (target == null && outputs.isEmpty() && onComplete==null) || (source == target && !placedIncomplete) || (materials.isEmpty() && stages.isEmpty() && buildTime==0))
+            throw new IllegalArgumentException(id + ": source/result and at least one material, stage or timer required");
+        if(placedIncomplete && (source!=target || !outputs.isEmpty() || removeBlock || transfer!=null || !resultData.isEmpty()))
+            throw new IllegalArgumentException(id + ": placed_incomplete requires identical source/result and no transfer or output");
         if (materials.size() > 64 || stages.size() > 64) throw new IllegalArgumentException("Maximum 64 materials/stages");
         if(target!=null&&(!outputs.isEmpty()||onComplete!=null||removeBlock))throw new IllegalArgumentException("Choose result block OR item-output completion");if(!accelerators.isEmpty()&&buildTime==0)throw new IllegalArgumentException("Accelerators require buildTime");if(target==null&&!resultData.isEmpty())throw new IllegalArgumentException("Result data requires a result block");completion.freeze();frozen = true;
     }
@@ -114,6 +118,6 @@ public final class UpgradeDefinition {
     public boolean preserve() { return preserveProperties; }
     public Consumer<TransferContext> transfer() { return transfer; }
     public String fingerprint() {
-        return source().toString()+":"+String.valueOf(target())+":"+materials.stream().map(m->"Material[item="+m.item()+", count="+m.count()+"]").toList()+":"+stages.stream().map(s->"Stage[type="+s.type()+", item="+s.item()+", actions="+s.actions()+", consume="+s.consume()+", damage="+s.damage()+"]").toList()+(buildTime>0?":timer:"+buildTime+":"+accelerators.stream().map(Accelerator::fingerprint).toList():"")+(itemOutput()?":"+outputs+":"+removeBlock+":"+(onComplete!=null):"")+(transferMode.isEmpty()?"":":transfer:"+transferMode)+(resultData.isEmpty()?"":":result_data:"+resultData);
+        return source().toString()+":"+String.valueOf(target())+":"+materials.stream().map(m->"Material[item="+m.item()+", count="+m.count()+"]").toList()+":"+stages.stream().map(s->"Stage[type="+s.type()+", item="+s.item()+", actions="+s.actions()+", consume="+s.consume()+", damage="+s.damage()+"]").toList()+(buildTime>0?":timer:"+buildTime+":"+accelerators.stream().map(Accelerator::fingerprint).toList():"")+(itemOutput()?":"+outputs+":"+removeBlock+":"+(onComplete!=null):"")+(transferMode.isEmpty()?"":":transfer:"+transferMode)+(resultData.isEmpty()?"":":result_data:"+resultData)+(placedIncomplete?":placed_incomplete":"");
     }
 }

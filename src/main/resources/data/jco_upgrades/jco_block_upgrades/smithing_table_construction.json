@@ -1,0 +1,16 @@
+{
+  "source": "minecraft:smithing_table",
+  "result": "minecraft:smithing_table",
+  "placed_incomplete": true,
+  "title": "Finish Smithing Table",
+  "description": "A newly placed table needs three pickaxe strikes before use.",
+  "stages": [
+    {
+      "type": "TOOL_ACTION",
+      "item": "#minecraft:pickaxes",
+      "actions": 3,
+      "input": "RIGHT",
+      "display_item": "minecraft:iron_pickaxe"
+    }
+  ]
+}

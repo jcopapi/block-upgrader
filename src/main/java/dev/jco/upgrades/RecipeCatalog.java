@@ -21,6 +21,7 @@ public final class RecipeCatalog {
             entry.putString("title", d.title());
             entry.putString("description", d.description());
             entry.putString("source", BuiltInRegistries.BLOCK.getKey(d.source()).toString());
+            entry.putBoolean("placedIncomplete", d.placedIncomplete());
             if (d.target() != null) entry.putString("result", BuiltInRegistries.BLOCK.getKey(d.target()).toString());
             entry.putInt("buildTime", d.buildTime());
             entry.putString("transfer", d.transferMode());

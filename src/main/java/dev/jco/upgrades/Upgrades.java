@@ -14,7 +14,8 @@ public final class Upgrades {
     private static Map<String, UpgradeDefinition> datapack = Map.of(), scripts = Map.of();
     private static Set<String> scriptDisabled = Set.of();
     private static final Map<net.minecraft.world.level.block.Block,List<UpgradeDefinition>> routes=new HashMap<>();
-    public static List<UpgradeDefinition> routes(net.minecraft.world.level.block.state.BlockState state){return routes.computeIfAbsent(state.getBlock(), block->definitions.values().stream().filter(d->state.is(d.source())).toList());}
+    public static List<UpgradeDefinition> routes(net.minecraft.world.level.block.state.BlockState state){return routes.computeIfAbsent(state.getBlock(), block->definitions.values().stream().filter(d->!d.placedIncomplete()&&state.is(d.source())).toList());}
+    public static UpgradeDefinition placement(net.minecraft.world.level.block.state.BlockState state){return definitions.values().stream().filter(d->d.placedIncomplete()&&state.is(d.source())).findFirst().orElse(null);}
     static {
         STAGE_TYPES.put("TOOL_ACTION", action -> true);
         STAGE_TYPES.put("ITEM_APPLICATION", action -> true);

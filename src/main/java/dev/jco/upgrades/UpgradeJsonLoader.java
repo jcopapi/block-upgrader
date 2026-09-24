@@ -45,6 +45,7 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
         var definition = new UpgradeDefinition(id.toString());
         definition.block(string(root, "source"));
         if (root.has("result")) definition.result(string(root, "result"));
+        if (root.has("placed_incomplete")) definition.placedIncomplete(bool(root, "placed_incomplete", false));
         for (JsonElement output : array(root, "outputs")) {
             JsonObject entry = object(output, "output");
             var key = ResourceLocation.parse(string(entry, "item"));

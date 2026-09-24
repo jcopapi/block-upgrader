@@ -34,8 +34,9 @@ public final class UpgradeRuntime {
     private static final Map<UUID,Selection> SELECTION=new HashMap<>();
     public static List<UpgradeDefinition> routes(BlockState state){return Upgrades.routes(state);}
     public static UpgradeDefinition selected(ServerPlayer player,BlockPos pos){
-        var level=player.serverLevel();if(occupied(level,pos))return null;var p=UpgradeData.get(level).entries.get(pos.asLong());
+        var level=player.serverLevel();var p=UpgradeData.get(level).entries.get(pos.asLong());
         if(p!=null)return Upgrades.definitions().get(p.id);
+        if(occupied(level,pos))return null;
         var all=routes(level.getBlockState(pos));if(all.isEmpty())return null;
         var selected=SELECTION.get(player.getUUID());
         return selected!=null&&selected.pos.equals(net.minecraft.core.GlobalPos.of(level.dimension(),pos))?all.stream().filter(d->d.id.equals(selected.id)).findFirst().orElse(all.getFirst()):all.getFirst();
@@ -52,6 +53,14 @@ public final class UpgradeRuntime {
         SELECTION.put(player.getUUID(),new Selection(net.minecraft.core.GlobalPos.of(level.dimension(),packet.pos()),all.get(index).id));snapshot(player,packet.pos());
     }
     public static boolean incomplete(ServerLevel level,BlockPos pos){var p=UpgradeData.get(level).entries.get(pos.asLong());return p!=null&&p.incomplete;}
+    public static void placed(net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent e){
+        if(TRANSFORMING.get()||!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;
+        var d=Upgrades.placement(e.getPlacedBlock());if(d==null)return;
+        var pos=e.getPos();var data=UpgradeData.get(level);
+        if(data.entries.containsKey(pos.asLong())||!InventorySafety.isEmpty(level.getBlockEntity(pos)))return;
+        var p=new UpgradeData.Progress(d);p.incomplete=true;p.target=net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(d.target()).toString();
+        data.entries.put(pos.asLong(),p);startTimer(level,pos,d,p);data.setDirty();incompleteSync(level,pos,p.target);relevant(level,pos);
+    }
     public static void incompleteSync(ServerLevel level,BlockPos pos,String target){
         var p=UpgradeData.get(level).entries.get(pos.asLong());var d=p==null?null:Upgrades.definitions().get(p.id);PacketDistributor.sendToPlayersTrackingChunk(level,new net.minecraft.world.level.ChunkPos(pos),new IncompletePayload(level.dimension().location().toString(),pos,target,p==null?-1:p.deadline,d==null?0:d.buildTime()));
     }
@@ -61,13 +70,21 @@ public final class UpgradeRuntime {
     public static void removed(ServerLevel level, BlockPos pos) {
         if (TRANSFORMING.get()) return;
         var data=UpgradeData.get(level);Downgrades.detach(level,pos);if(data.history.remove(pos.asLong())!=null)data.setDirty(); var p=data.entries.get(pos.asLong());if(p!=null&&p.prepared&&!p.completed){p.removeOnComplete=true;data.schedule(pos.asLong(),level.getGameTime()+1);data.setDirty();return;}data.entries.remove(pos.asLong());
-        if(p!=null) { incompleteSync(level,pos,"");data.setDirty(); if(!p.incomplete)p.escrow.forEach(s -> Block.popResource(level,pos,s.copy())); }
+        if(p!=null) { incompleteSync(level,pos,"");data.setDirty(); var d=Upgrades.definitions().get(p.id);if(!p.incomplete||d!=null&&d.placedIncomplete())p.escrow.forEach(s -> Block.popResource(level,pos,s.copy())); }
     }
     /** Player cancellation restores only a reversible, empty-inventory construction snapshot. */
     public static boolean cancel(ServerPlayer player,BlockPos pos){
         var level=player.serverLevel();var data=UpgradeData.get(level);var p=data.entries.get(pos.asLong());
         if(p==null||p.committing||p.prepared||p.completed||player.isSpectator()||!player.mayBuild()||!level.mayInteract(player,pos)||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>Math.pow(player.blockInteractionRange()+1,2))return false;
         if(p.incomplete){
+            var definition=Upgrades.definitions().get(p.id);
+            if(definition!=null&&definition.placedIncomplete()){
+                if(!InventorySafety.isEmpty(level.getBlockEntity(pos)))return false;
+                p.committing=true;TRANSFORMING.set(true);
+                try{if(!level.setBlock(pos,Blocks.AIR.defaultBlockState(),3))return false;}
+                finally{TRANSFORMING.remove();p.committing=false;}
+                var blockItem=definition.source().asItem().getDefaultInstance();if(!player.getInventory().add(blockItem))player.drop(blockItem,false);
+            }else{
             if(!p.rollbackReady||!InventorySafety.isEmpty(level.getBlockEntity(pos))){
                 player.displayClientMessage(Component.literal("Cannot safely undo this construction: legacy state or transferred inventory. Materials already built into it are retained."),true);return false;
             }
@@ -76,6 +93,7 @@ public final class UpgradeRuntime {
             p.committing=true;TRANSFORMING.set(true);
             try{if(!level.setBlock(pos,source,3))return false;var be=level.getBlockEntity(pos);if(be!=null){be.loadWithComponents(p.sourceData,level.registryAccess());if(net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage"))dev.jco.upgrades.integration.SophisticatedStorage.restoreWoodFromSnapshot(be,p.sourceData);be.setChanged();level.sendBlockUpdated(pos,source,source,3);}}
             finally{TRANSFORMING.set(false);p.committing=false;}
+            }
         }
         data.entries.remove(pos.asLong());data.setDirty();incompleteSync(level,pos,"");
         for(var deposited:p.escrow){var stack=deposited.copy();if(!player.getInventory().add(stack))player.drop(stack,false);}p.escrow.clear();
@@ -93,7 +111,7 @@ public final class UpgradeRuntime {
     public static void interact(PlayerInteractEvent.RightClickBlock e) {
         if(e.getHand()!=InteractionHand.MAIN_HAND)return;
         if(!(e.getEntity() instanceof ServerPlayer player)||!(e.getLevel() instanceof ServerLevel level))return;
-        var pos=e.getPos();if(occupied(level,pos))return;var old=UpgradeData.get(level).entries.get(pos.asLong());
+        var pos=e.getPos();var old=UpgradeData.get(level).entries.get(pos.asLong());if(occupied(level,pos)&&!(old!=null&&old.incomplete))return;
         if(old!=null&&old.incomplete){e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);}
         if(old!=null&&actionInput.get()==InteractionMode.RIGHT&&player.isShiftKeyDown()&&player.getMainHandItem().isEmpty()){e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);cancel(player,pos);return;}
         var d=selected(player,pos);if(d==null)return;
@@ -112,7 +130,7 @@ public final class UpgradeRuntime {
         if(p.lastAction==level.getGameTime())return;
         var data=UpgradeData.get(level);
         if(actionInput.get()==InteractionMode.LEFT&&!p.incomplete)return;
-        if(!p.incomplete)for(int i=0;i<d.materials().size();i++) {
+        if(!p.incomplete||d.placedIncomplete())for(int i=0;i<d.materials().size();i++) {
             var m=d.materials().get(i);if(p.supplied[i]>=m.count()||!m.item().matches(stack))continue;
             var item=stack.copyWithCount(1);p.supplied[i]++;p.lastAction=level.getGameTime();data.entries.put(pos.asLong(),p);
             if(!player.isCreative()){p.escrow.add(item.copy());stack.shrink(1);}data.setDirty();
@@ -156,7 +174,7 @@ public final class UpgradeRuntime {
         if(p.incomplete) {
             if(d.manualCompletes()&&!d.stages().isEmpty()&&d.accelerators().isEmpty()&&p.stage>=d.stages().size())p.deadline=level.getGameTime();
             if(p.stage>=d.stages().size() && (d.buildTime()==0||p.deadline>=0&&p.deadline<=level.getGameTime())) {
-                Downgrades.remember(level,pos,d,p);UpgradeData.get(level).entries.remove(pos.asLong());UpgradeData.get(level).setDirty();incompleteSync(level,pos,"");
+                if(!d.placedIncomplete())Downgrades.remember(level,pos,d,p);UpgradeData.get(level).entries.remove(pos.asLong());UpgradeData.get(level).setDirty();incompleteSync(level,pos,"");
                 d.completion().emit(level,net.minecraft.world.phys.Vec3.atCenterOf(pos),player,InteractionHand.MAIN_HAND,d.display(),false);
             }
             return;
@@ -330,7 +348,7 @@ public final class UpgradeRuntime {
         PacketDistributor.sendToPlayer(player,new UpgradePayload(level.dimension().location().toString(),pos,lines,requirement.display(),requirement.remaining(),view(level,pos,d,p)));
     }
     private static CompoundTag view(ServerLevel level,BlockPos pos,UpgradeDefinition d,UpgradeData.Progress p){
-        var n=new CompoundTag();var reverse=Downgrades.view(level,pos);if(!reverse.isEmpty())n.put("reverse",reverse);n.putBoolean("blockUpgrade",true);n.putBoolean("compact",d.materials().isEmpty());n.putBoolean("canCancel",!p.prepared&&!p.completed&&(!p.incomplete||p.rollbackReady));n.putString("block",net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString());n.putString("id",d.id);n.putString("title",d.title());n.putString("description",d.description());n.putDouble("range",d.hudRange());n.put("icon",preview(level,pos,d).saveOptional(level.registryAccess()));
+        var n=new CompoundTag();var reverse=Downgrades.view(level,pos);if(!reverse.isEmpty())n.put("reverse",reverse);n.putBoolean("blockUpgrade",true);n.putBoolean("compact",d.materials().isEmpty());n.putBoolean("canCancel",!p.prepared&&!p.completed&&(!p.incomplete||p.rollbackReady||d.placedIncomplete()));n.putString("block",net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString());n.putString("id",d.id);n.putString("title",d.title());n.putString("description",d.description());n.putDouble("range",d.hudRange());n.put("icon",preview(level,pos,d).saveOptional(level.registryAccess()));
         var all=routes(level.getBlockState(pos));n.putInt("routes",all.size());n.putInt("index",all.indexOf(d));n.putBoolean("locked",UpgradeData.get(level).entries.containsKey(pos.asLong()));n.putBoolean("incomplete",p.incomplete||d.itemOutput()&&d.materials().isEmpty());n.putBoolean("completed",p.completed);
         var rows=new net.minecraft.nbt.ListTag();
         for(int i=0;i<d.materials().size();i++){var m=d.materials().get(i);var row=new CompoundTag();var display=m.feedback().display(representative(m.item()));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(m.item(),display));row.putString("input","RIGHT");row.putBoolean("material",true);row.putInt("have",p.supplied[i]);row.putInt("need",m.count());rows.add(row);}
