@@ -9,6 +9,7 @@ public final class InventorySafety {
     private InventorySafety() {}
     public static boolean isEmpty(BlockEntity entity) {
         if (entity == null) return true;
+        if (entity instanceof net.minecraft.world.level.block.entity.BedBlockEntity) return true;
         if (entity instanceof Container container) return container.isEmpty();
         return ModList.get().isLoaded("sophisticatedstorage")
             && dev.jco.upgrades.integration.SophisticatedStorage.isStorage(entity)

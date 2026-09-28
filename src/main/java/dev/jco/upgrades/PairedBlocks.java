@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
+import net.minecraft.world.level.block.state.properties.BedPart;
 
 /** A two-block chest is one upgrade job, provided both halves and the result support pairing. */
 public final class PairedBlocks {
@@ -32,6 +33,13 @@ public final class PairedBlocks {
             ? (EnumProperty<DoubleBlockHalf>) enumeration : null;
     }
 
+    @SuppressWarnings("unchecked")
+    private static EnumProperty<BedPart> bedPart(BlockState state) {
+        var property=state.getBlock().getStateDefinition().getProperty("part");
+        return property instanceof EnumProperty<?> enumeration && enumeration.getValue("head").orElse(null)==BedPart.HEAD
+            ?(EnumProperty<BedPart>)enumeration:null;
+    }
+
     public static BlockPos partner(ServerLevel level, BlockPos pos) {
         var state = level.getBlockState(pos);
         var half = half(state);
@@ -41,6 +49,15 @@ public final class PairedBlocks {
             if(!level.hasChunkAt(otherPos))return null;
             var other=level.getBlockState(otherPos);var otherHalf=half(other);
             return other.getBlock()==state.getBlock()&&otherHalf!=null&&other.getValue(otherHalf)==(upper?DoubleBlockHalf.LOWER:DoubleBlockHalf.UPPER)?otherPos:null;
+        }
+        var part=bedPart(state);var bedFacing=facing(state);
+        if(part!=null&&bedFacing!=null){
+            var head=state.getValue(part)==BedPart.HEAD;var direction=state.getValue(bedFacing);
+            var otherPos=pos.relative(head?direction.getOpposite():direction);
+            if(!level.hasChunkAt(otherPos))return null;
+            var other=level.getBlockState(otherPos);var otherPart=bedPart(other);var otherFacing=facing(other);
+            return other.getBlock()==state.getBlock()&&otherPart!=null&&otherFacing!=null&&other.getValue(otherFacing)==direction
+                &&other.getValue(otherPart)==(head?BedPart.FOOT:BedPart.HEAD)?otherPos:null;
         }
         var type = type(state);
         var facing = facing(state);
@@ -58,17 +75,19 @@ public final class PairedBlocks {
     }
 
     public static boolean appearsPaired(BlockState state) {
-        if(half(state)!=null)return true;
+        if(half(state)!=null||bedPart(state)!=null)return true;
         var type = type(state);
         return type != null && state.getValue(type) != ChestType.SINGLE;
     }
 
     public static boolean supportsPair(BlockState state) {
-        return half(state)!=null||type(state) != null && facing(state) != null;
+        return half(state)!=null||bedPart(state)!=null&&facing(state)!=null||type(state) != null && facing(state) != null;
     }
 
     public static boolean compatiblePair(BlockState source,BlockState target) {
-        return half(source)!=null?half(target)!=null:type(source)!=null&&facing(source)!=null&&type(target)!=null&&facing(target)!=null;
+        if(half(source)!=null)return half(target)!=null;
+        if(bedPart(source)!=null)return bedPart(target)!=null&&facing(target)!=null;
+        return type(source)!=null&&facing(source)!=null&&type(target)!=null&&facing(target)!=null;
     }
 
     public static BlockPos owner(ServerLevel level, BlockPos pos) {
