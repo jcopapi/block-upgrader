@@ -27,14 +27,19 @@ import net.minecraft.world.item.crafting.Ingredient;
 /** Block transformation, aligned material list, and optional work in vanilla JEI slots. */
 public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecipe> {
     public static final RecipeType<UpgradeJeiRecipe> TYPE = RecipeType.create("jco_upgrades", "block_upgrade", UpgradeJeiRecipe.class);
-    private static final int WIDTH = 190, HEIGHT = 139;
+    private static final int WIDTH = 200, HEIGHT = 139;
+    private static final int SOURCE_X = 25, SOURCE_Y = 51;
+    private static final int MATERIAL_X = 86, MATERIAL_CENTER_Y = 51;
+    private static final int RESULT_X = 141, RESULT_Y = 36;
+    private static final int WORK_Y = 112;
+    private static final int VISIBLE_MATERIALS = 3, VISIBLE_WORK = 3;
     private final IDrawable icon, largeOutputBackground;
     private final IIngredientRenderer<ItemStack> largeOutput;
 
     public UpgradeJeiCategory(mezz.jei.api.helpers.IJeiHelpers helpers) {
         var gui = helpers.getGuiHelper();
         icon = gui.createDrawableItemStack(new ItemStack(Items.IRON_PICKAXE));
-        largeOutputBackground = new ScaledDrawable(gui.getOutputSlot(), 2);
+        largeOutputBackground = new ScaledDrawable(gui.getOutputSlot(), 3);
         largeOutput = new LargeItemRenderer(helpers.getIngredientManager().getIngredientRenderer(VanillaTypes.ITEM_STACK));
     }
     @Override public RecipeType<UpgradeJeiRecipe> getRecipeType() { return TYPE; }
@@ -45,24 +50,25 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
     @Override public ResourceLocation getRegistryName(UpgradeJeiRecipe recipe) { return recipe.id(); }
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, UpgradeJeiRecipe recipe, IFocusGroup focuses) {
-        builder.addInputSlot(34, 15).addItemStack(recipe.source()).setStandardSlotBackground();
-        builder.addOutputSlot(124, 45).addItemStack(recipe.result())
+        builder.addInputSlot(SOURCE_X, SOURCE_Y).addItemStack(recipe.source()).setStandardSlotBackground();
+        builder.addOutputSlot(RESULT_X, RESULT_Y).addItemStack(recipe.result())
             .setCustomRenderer(VanillaTypes.ITEM_STACK, largeOutput)
-            .setBackground(largeOutputBackground, -2, -2);
+            .setBackground(largeOutputBackground, -3, -3);
         for (int i = 1; i < recipe.outputs().size(); i++)
             builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT).addItemStack(recipe.outputs().get(i));
 
-        int visibleMaterials = Math.min(recipe.materials().size(), recipe.materials().size() > 6 ? 5 : 6);
+        int visibleMaterials = Math.min(recipe.materials().size(), VISIBLE_MATERIALS);
+        int firstMaterialY = MATERIAL_CENTER_Y - (visibleMaterials - 1) * 14;
         for (int i = 0; i < recipe.materials().size(); i++) {
             var material = recipe.materials().get(i);
             if (i < visibleMaterials)
-                addMaterial(builder.addInputSlot(14 + (i % 2) * 28, 62 + (i / 2) * 24).setStandardSlotBackground(), material);
+                addMaterial(builder.addInputSlot(MATERIAL_X, firstMaterialY + i * 28).setStandardSlotBackground(), material);
             else addMaterial(builder.addInvisibleIngredients(RecipeIngredientRole.INPUT), material);
         }
         for (int i = 0; i < recipe.work().size(); i++) {
             var action = recipe.work().get(i);
-            if (i < 3) {
-                var slot = builder.addSlot(RecipeIngredientRole.CATALYST, 88, 62 + i * 24).setStandardSlotBackground();
+            if (i < VISIBLE_WORK) {
+                var slot = builder.addSlot(RecipeIngredientRole.CATALYST, 62 + i * 29, WORK_Y).setStandardSlotBackground();
                 addTool(slot, action);
                 slot.addRichTooltipCallback((view, tooltip) -> tooltip.add(Component.literal(
                     action.count() + "x " + action.label() + (action.kind().equals("accelerator") ? " (accelerates)" : ""))));
@@ -85,25 +91,26 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
     }
 
     @Override public void draw(UpgradeJeiRecipe recipe, IRecipeSlotsView slots, GuiGraphics gui, double mouseX, double mouseY) {
-        gui.drawString(Minecraft.getInstance().font, ">", 90, 24, 0xFF555555, false);
-        if (recipe.materials().size() > 6)
-            gui.drawString(Minecraft.getInstance().font, "+" + (recipe.materials().size() - 5), 43, 120, 0xFF555555, false);
-        if (recipe.work().size() > 3)
-            gui.drawString(Minecraft.getInstance().font, "+" + (recipe.work().size() - 3), 109, 117, 0xFF555555, false);
+        gui.drawString(Minecraft.getInstance().font, ">", 59, 55, 0xFF555555, false);
+        gui.drawString(Minecraft.getInstance().font, ">", 118, 55, 0xFF555555, false);
+        if (recipe.materials().size() > VISIBLE_MATERIALS)
+            gui.drawString(Minecraft.getInstance().font, "+" + (recipe.materials().size() - VISIBLE_MATERIALS), 110, 83, 0xFF555555, false);
+        if (recipe.work().size() > VISIBLE_WORK)
+            gui.drawString(Minecraft.getInstance().font, "+" + (recipe.work().size() - VISIBLE_WORK), 153, 116, 0xFF555555, false);
     }
 
     @Override public void getTooltip(ITooltipBuilder lines, UpgradeJeiRecipe recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
-        if (mouseX >= 75 && mouseX < 115 && mouseY >= 15 && mouseY < 42) {
+        if (mouseX >= 114 && mouseX < 132 && mouseY >= 48 && mouseY < 70) {
             lines.add(Component.literal(recipe.title()));
             if (!recipe.description().isBlank()) lines.add(Component.literal(recipe.description()));
             if (recipe.placedIncomplete()) lines.add(Component.literal("Finish after placement"));
-        } else if (recipe.materials().size() > 6 && mouseX >= 40 && mouseX < 72 && mouseY >= 113) {
-            for (int i = 5; i < recipe.materials().size(); i++) {
+        } else if (recipe.materials().size() > VISIBLE_MATERIALS && mouseX >= 108 && mouseX < 133 && mouseY >= 79 && mouseY < 100) {
+            for (int i = VISIBLE_MATERIALS; i < recipe.materials().size(); i++) {
                 var material = recipe.materials().get(i);
                 lines.add(Component.literal(material.count() + "x " + material.label()));
             }
-        } else if (recipe.work().size() > 3 && mouseX >= 105 && mouseX < 125 && mouseY >= 112) {
-            for (int i = 3; i < recipe.work().size(); i++) {
+        } else if (recipe.work().size() > VISIBLE_WORK && mouseX >= 151 && mouseX < 177 && mouseY >= WORK_Y && mouseY < 132) {
+            for (int i = VISIBLE_WORK; i < recipe.work().size(); i++) {
                 var action = recipe.work().get(i);
                 lines.add(Component.literal(action.count() + "x " + action.label()));
             }

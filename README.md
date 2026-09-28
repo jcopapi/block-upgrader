@@ -12,7 +12,7 @@ The client config `config/block_upgrader-client.toml` has `hudScale` (0.5–2.0,
 
 ## Just Enough Items
 
-With JEI installed, open the **Upgrade** recipe category (iron pickaxe icon) from a source block's uses, a result block's recipes, or a required material. The larger result is on the right; materials form a list beneath the source block, with quantities on the item icons. Tool actions and accelerators appear beside that list. Hover a tool for its action count, the arrow for the recipe description, or a `+N` marker for extra entries. Item tags cycle through valid alternatives. JEI controls category tab order in `config/jei/client/recipe-category-sort-order.ini`; put `\=jco_upgrades:block_upgrade` immediately after `\=minecraft:crafting` to place Upgrade second.
+With JEI installed, open the **Upgrade** recipe category (iron pickaxe icon) from a source block's uses, a result block's recipes, or a required material. The source block is on the left, required materials form a centered vertical list, and the larger result is on the right. Quantities appear on the item icons. Tool actions and accelerators appear in a row below. Hover a tool for its action count, the arrow before the result for the recipe description, or a `+N` marker for extra entries. Item tags cycle through valid alternatives. JEI controls category tab order in `config/jei/client/recipe-category-sort-order.ini`; put `\=jco_upgrades:block_upgrade` immediately after `\=minecraft:crafting` to place Upgrade second.
 
 JEI receives the active recipe catalog from the server. Datapack and KubeJS overrides therefore appear correctly in multiplayer and refresh after `/reload` or a successful script reload. JEI is optional; the block-upgrade HUD and gameplay work without it.
 
