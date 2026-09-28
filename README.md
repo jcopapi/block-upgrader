@@ -55,7 +55,20 @@ Place a definition in `data/<namespace>/jco_block_upgrades/<name>.json`. The ID 
 }
 ```
 
-Fields: `enabled`, `required_mods`, `source`, `result` or `outputs`, `placed_incomplete`, `title`, `description`, `display_item`, `hud_range`, `materials`, `stages`, `build_time`, `manual_completes`, `accelerators`, `preserve_properties`, `transfer`, `result_data`, `remove_block_on_complete`, `completion_feedback`, and `downgrade`. Select items by registry ID or item tag (`#minecraft:pickaxes`). Stage types are `TOOL_ACTION` and `ITEM_APPLICATION`. Stage and accelerator inputs can be `LEFT`, `RIGHT`, or `BOTH`. Feedback supports `label`, sound, particles, impact, icon, cooldown and completion effects. Any item or tag can be an accelerator: omit `kind` (or use `"kind":"any"`) and set `consume`/`damage` to the desired cost. For example, `{"item":"create:super_glue","actions":1,"reduction":200,"consume":0,"damage":1,"label":"Super Glue"}`. A custom `label` on a material, stage, or accelerator replaces its automatic HUD and JEI name; a downgrade tool label appears in the HUD. The included JSON files provide working combinations.
+Fields: `enabled`, `required_mods`, `source`, `result` or `outputs`, `placed_incomplete`, `title`, `description`, `display_item`, `hud_range`, `materials`, `stages`, `build_time`, `manual_completes`, `accelerators`, `preserve_properties`, `transfer`, `result_data`, `remove_block_on_complete`, `completion_feedback`, and `downgrade`. Select items by registry ID or item tag (`#minecraft:pickaxes`). Stage types are `TOOL_ACTION` and `ITEM_APPLICATION`. Stage and accelerator inputs can be `LEFT`, `RIGHT`, or `BOTH`. Feedback supports `label`, sound, particles, impact, `display_item`, cooldown and completion effects. Any item or tag can be an accelerator: omit `kind` (or use `"kind":"any"`) and set `consume`/`damage` to the desired cost. For example, `{"item":"create:super_glue","actions":1,"reduction":200,"consume":0,"damage":1,"label":"Super Glue"}`. The included JSON files provide working combinations.
+
+### Custom display names
+
+Use `label` to name a material, required action, accelerator, or downgrade tool independently of its item ID or tag. For example, if your pack defines the `#c:hammers` item tag, this action accepts any item in that tag and displays **Hammer** instead of a specific item's name:
+
+```json
+"stages": [
+  {"type": "TOOL_ACTION", "item": "#c:hammers", "actions": 3,
+   "input": "RIGHT", "label": "Hammer"}
+]
+```
+
+The same property works in a material (`{"item":"#c:ingots/iron","count":2,"label":"Iron Ingot"}`), an accelerator, and a downgrade (`{"tool":"#c:hammers","hits":3,"label":"Hammer"}`). The labels appear in the in-world HUD; JEI uses them for action tooltips and overflow entries, while visible item slots retain the item's normal tooltip. `label` changes presentation only: the item or tag still determines what is accepted. The referenced tag must exist in your pack.
 
 `transfer` supports `none`, `copy_data`, `copy_inventory`, and `sophisticated_storage`. With `none`, nonempty source inventories block conversion. `copy_data` is for block entities that understand the same saved data, `copy_inventory` maps source slots to target slots without copying processing timers, and `sophisticated_storage` handles capacity and contents of compatible Sophisticated tiers. Source inventories are restored on failed conversion. `result_data` is a JSON object merged into the new block entity after transfer. It cannot replace `id`, `x`, `y`, or `z`.
 
@@ -72,17 +85,17 @@ Without `result_data`, the original wood is preserved. Controller-linked storage
 Declare recipes at top level in `kubejs/server_scripts/`. Scripts take priority over datapacks and can disable a bundled route with `BlockUpgrades.disable('jco_upgrades:furnace_to_smoker')`. KubeJS is optional.
 
 ```js
-BlockUpgrades.create('pack:oak_copper_chest', upgrade => {
+BlockUpgrades.create('pack:chest_to_copper', upgrade => {
   upgrade.block('sophisticatedstorage:chest')
     .result('sophisticatedstorage:copper_chest')
-    .title('Upgrade to Oak Copper Chest')
+    .title('Upgrade to Copper Chest')
     .material('minecraft:copper_ingot', 8)
-    .material('minecraft:oak_planks', 2)
     .transferMode('sophisticated_storage')
-    .resultData("{woodType:'oak'}")
     .downgrade('#minecraft:axes', 3)
 })
 ```
+
+KubeJS uses the same display override through the feedback callback, for example `.work('#c:hammers', 3, feedback => feedback.label('Hammer').input('RIGHT'))` or `.material('#c:ingots/iron', 2, feedback => feedback.label('Iron Ingot'))`. For downgrade, use `.downgrade('#c:hammers', 3, 'Hammer')`.
 
 To make an ordinary block require construction when placed, set `placed_incomplete` to `true` with the same `source` and `result`. The bundled Smithing Table recipe is a working example:
 
