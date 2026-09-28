@@ -57,6 +57,7 @@ public final class RecipeCatalog {
                 row.putString("label", accelerator.feedback().label());
                 row.putString("input", accelerator.input().name());
                 row.putInt("actions", accelerator.actions);
+                row.putInt("reduction", accelerator.reduction);
                 row.putString("kind", "accelerator");
                 row.put("icon", accelerator.feedback().display(UpgradeRuntime.representative(accelerator.item)).saveOptional(player.registryAccess()));
                 work.add(row);

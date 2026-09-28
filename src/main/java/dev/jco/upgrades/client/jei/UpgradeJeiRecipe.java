@@ -16,7 +16,7 @@ import net.neoforged.fml.ModList;
 public record UpgradeJeiRecipe(ResourceLocation id, String title, String description,
     ItemStack source, ItemStack result, List<ItemStack> outputs, List<Need> materials,
     List<Need> work, int buildTime, String transfer, boolean placedIncomplete, boolean fixedResultWood) {
-    public record Need(String selector, int count, ItemStack icon, String input, String kind, String customLabel) {
+    public record Need(String selector, int count, int reduction, ItemStack icon, String input, String kind, String customLabel) {
         public String label() {
             var actual = selector.startsWith("#") ? icon : BuiltInRegistries.ITEM.get(ResourceLocation.parse(selector)).getDefaultInstance();
             return UpgradeRuntime.label(new StackMatcher(selector), actual,customLabel);
@@ -47,7 +47,7 @@ public record UpgradeJeiRecipe(ResourceLocation id, String title, String descrip
             var row = (CompoundTag) raw;
             String selector = row.getString("item");
             ItemStack icon = ItemStack.parseOptional(registry, row.getCompound("icon"));
-            result.add(new Need(selector, row.getInt(key.equals("work") ? "actions" : "count"),
+            result.add(new Need(selector, row.getInt(key.equals("work") ? "actions" : "count"), row.getInt("reduction"),
                 icon, row.getString("input"), row.getString("kind"),row.getString("label")));
         }
         return result;

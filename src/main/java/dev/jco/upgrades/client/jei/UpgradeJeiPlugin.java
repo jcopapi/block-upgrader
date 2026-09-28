@@ -65,7 +65,10 @@ public final class UpgradeJeiPlugin implements IModPlugin {
         var raw = RecipeCatalogClient.current().getList("recipes", 10);
         var recipes = new ArrayList<UpgradeJeiRecipe>(raw.size());
         for (var entry : raw) {
-            try { recipes.add(UpgradeJeiRecipe.read((net.minecraft.nbt.CompoundTag) entry, level.registryAccess())); }
+            try {
+                var recipe = UpgradeJeiRecipe.read((net.minecraft.nbt.CompoundTag) entry, level.registryAccess());
+                if (!recipe.placedIncomplete() && !recipe.materials().isEmpty()) recipes.add(recipe);
+            }
             catch (RuntimeException ex) { LOGGER.error("Cannot display Block Upgrader JEI recipe", ex); }
         }
         return List.copyOf(recipes);
