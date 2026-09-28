@@ -64,7 +64,8 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
         if (root.has("result_data")) definition.resultData(object(root.get("result_data"), "result_data").toString());
         if (root.has("downgrade")) {
             JsonObject undo = object(root.get("downgrade"), "downgrade");
-            definition.downgrade(string(undo, "tool"), integer(undo, "hits", 3));
+            if(undo.has("label"))definition.downgrade(string(undo, "tool"), integer(undo, "hits", 3),string(undo,"label"));
+            else definition.downgrade(string(undo, "tool"), integer(undo, "hits", 3));
         }
         for (JsonElement material : array(root, "materials")) {
             JsonObject entry = object(material, "material");
@@ -80,7 +81,7 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
         }
         for (JsonElement accelerator : array(root, "accelerators")) {
             JsonObject entry = object(accelerator, "accelerator");
-            String kind = string(entry, "kind");
+            String kind = entry.has("kind") ? string(entry, "kind") : "any";
             java.util.function.Consumer<Accelerator> settings = acceleration -> {
                 if (entry.has("input")) acceleration.input(string(entry, "input"));
                 if (entry.has("damage")) acceleration.durability(integer(entry, "damage", 0));
@@ -92,6 +93,7 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
             };
             if (kind.equals("tool")) definition.acceleratorTool(string(entry, "item"), integer(entry, "actions", 1), integer(entry, "reduction", 1), settings);
             else if (kind.equals("item")) definition.acceleratorItem(string(entry, "item"), integer(entry, "actions", 1), integer(entry, "reduction", 1), settings);
+            else if(kind.equals("any")) definition.accelerator(string(entry, "item"), integer(entry, "actions", 1), integer(entry, "reduction", 1), settings);
             else throw new IllegalArgumentException("Unknown accelerator kind: " + kind);
         }
         if (root.has("completion_feedback")) definition.completionFeedback(feedback -> configure(feedback, object(root.get("completion_feedback"), "completion_feedback")));
@@ -100,6 +102,7 @@ public final class UpgradeJsonLoader extends SimpleJsonResourceReloadListener {
     }
 
     private static void configure(Feedback feedback, JsonObject entry) {
+        if (entry.has("label")) feedback.label(string(entry, "label"));
         if (entry.has("input")) feedback.input(string(entry, "input"));
         if (entry.has("cooldown")) feedback.actionCooldown(integer(entry, "cooldown", 10));
         if (entry.has("display_item")) feedback.displayItem(stack(string(entry, "display_item")));

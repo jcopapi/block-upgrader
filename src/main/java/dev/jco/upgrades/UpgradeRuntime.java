@@ -34,7 +34,7 @@ public final class UpgradeRuntime {
     private static final Map<UUID,Selection> SELECTION=new HashMap<>();
     public static List<UpgradeDefinition> routes(BlockState state){return Upgrades.routes(state);}
     public static UpgradeDefinition selected(ServerPlayer player,BlockPos pos){
-        var level=player.serverLevel();var p=UpgradeData.get(level).entries.get(pos.asLong());
+        var level=player.serverLevel();pos=PairedBlocks.owner(level,pos);var p=UpgradeData.get(level).entries.get(pos.asLong());
         if(p!=null)return Upgrades.definitions().get(p.id);
         if(occupied(level,pos))return null;
         var all=routes(level.getBlockState(pos));if(all.isEmpty())return null;
@@ -42,17 +42,25 @@ public final class UpgradeRuntime {
         return selected!=null&&selected.pos.equals(net.minecraft.core.GlobalPos.of(level.dimension(),pos))?all.stream().filter(d->d.id.equals(selected.id)).findFirst().orElse(all.getFirst()):all.getFirst();
     }
     public static boolean targeted(ServerPlayer player,BlockPos pos,double range){
-        if(player.isSpectator()||!player.isShiftKeyDown()||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>range*range)return false;
+        if(player.isSpectator()||!previewTool(player.getMainHandItem(),selected(player,pos))||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>range*range)return false;
         var hit=player.pick(Math.min(range,player.blockInteractionRange()),1,false);
         return hit instanceof BlockHitResult b&&hit.getType()==net.minecraft.world.phys.HitResult.Type.BLOCK&&b.getBlockPos().equals(pos);
     }
+    public static boolean previewTool(ItemStack stack,UpgradeDefinition definition){
+        if(stack.isEmpty()||definition==null)return false;
+        if(stack.has(net.minecraft.core.component.DataComponents.TOOL))return true;
+        if(new StackMatcher(definition.reverseTool()).matches(stack))return true;
+        for(var stage:definition.stages())if(stage.item().matches(stack))return true;
+        for(var accelerator:definition.accelerators())if(accelerator.item.matches(stack))return true;
+        return false;
+    }
     public static void select(ServerPlayer player,SelectRoutePayload packet){
-        var level=player.serverLevel();if(Math.abs(packet.step())!=1||!level.hasChunkAt(packet.pos())||UpgradeData.get(level).entries.containsKey(packet.pos().asLong()))return;
+        var level=player.serverLevel();if(Math.abs(packet.step())!=1||!level.hasChunkAt(packet.pos())||UpgradeData.get(level).entries.containsKey(PairedBlocks.owner(level,packet.pos()).asLong()))return;
         var current=selected(player,packet.pos());if(current==null||!targeted(player,packet.pos(),current.hudRange()))return;
         var all=routes(level.getBlockState(packet.pos()));int index=Math.floorMod(all.indexOf(current)+packet.step(),all.size());
-        SELECTION.put(player.getUUID(),new Selection(net.minecraft.core.GlobalPos.of(level.dimension(),packet.pos()),all.get(index).id));snapshot(player,packet.pos());
+        SELECTION.put(player.getUUID(),new Selection(net.minecraft.core.GlobalPos.of(level.dimension(),PairedBlocks.owner(level,packet.pos())),all.get(index).id));snapshot(player,packet.pos());
     }
-    public static boolean incomplete(ServerLevel level,BlockPos pos){var p=UpgradeData.get(level).entries.get(pos.asLong());return p!=null&&p.incomplete;}
+    public static boolean incomplete(ServerLevel level,BlockPos pos){var p=UpgradeData.get(level).entries.get(PairedBlocks.owner(level,pos).asLong());return p!=null&&p.incomplete;}
     public static void placed(net.neoforged.neoforge.event.level.BlockEvent.EntityPlaceEvent e){
         if(TRANSFORMING.get()||!(e.getLevel() instanceof ServerLevel level)||!(e.getEntity() instanceof ServerPlayer player))return;
         var d=Upgrades.placement(e.getPlacedBlock());if(d==null)return;
@@ -63,18 +71,25 @@ public final class UpgradeRuntime {
     }
     public static void incompleteSync(ServerLevel level,BlockPos pos,String target){
         var p=UpgradeData.get(level).entries.get(pos.asLong());var d=p==null?null:Upgrades.definitions().get(p.id);PacketDistributor.sendToPlayersTrackingChunk(level,new net.minecraft.world.level.ChunkPos(pos),new IncompletePayload(level.dimension().location().toString(),pos,target,p==null?-1:p.deadline,d==null?0:d.buildTime()));
+        if(p!=null&&p.partner!=Long.MIN_VALUE){var other=BlockPos.of(p.partner);PacketDistributor.sendToPlayersTrackingChunk(level,new net.minecraft.world.level.ChunkPos(other),new IncompletePayload(level.dimension().location().toString(),other,target,p.deadline,d==null?0:d.buildTime()));}
+    }
+    private static void clearPartnerOverlay(ServerLevel level,UpgradeData.Progress p){
+        if(p.partner==Long.MIN_VALUE)return;var other=BlockPos.of(p.partner);
+        PacketDistributor.sendToPlayersTrackingChunk(level,new net.minecraft.world.level.ChunkPos(other),new IncompletePayload(level.dimension().location().toString(),other,""));
     }
     public static void chunk(net.neoforged.neoforge.event.level.ChunkWatchEvent.Sent e){
-        UpgradeData.get(e.getLevel()).entries.forEach((key,p)->{var pos=BlockPos.of(key);if(p.incomplete&&new net.minecraft.world.level.ChunkPos(pos).equals(e.getPos()))PacketDistributor.sendToPlayer(e.getPlayer(),new IncompletePayload(e.getLevel().dimension().location().toString(),pos,p.target,p.deadline,Upgrades.definitions().containsKey(p.id)?Upgrades.definitions().get(p.id).buildTime():0));});
+        UpgradeData.get(e.getLevel()).entries.forEach((key,p)->{var pos=BlockPos.of(key);if(!p.incomplete)return;int duration=Upgrades.definitions().containsKey(p.id)?Upgrades.definitions().get(p.id).buildTime():0;if(new net.minecraft.world.level.ChunkPos(pos).equals(e.getPos()))PacketDistributor.sendToPlayer(e.getPlayer(),new IncompletePayload(e.getLevel().dimension().location().toString(),pos,p.target,p.deadline,duration));if(p.partner!=Long.MIN_VALUE){var other=BlockPos.of(p.partner);if(new net.minecraft.world.level.ChunkPos(other).equals(e.getPos()))PacketDistributor.sendToPlayer(e.getPlayer(),new IncompletePayload(e.getLevel().dimension().location().toString(),other,p.target,p.deadline,duration));}});
     }
     public static void removed(ServerLevel level, BlockPos pos) {
         if (TRANSFORMING.get()) return;
-        var data=UpgradeData.get(level);Downgrades.detach(level,pos);if(data.history.remove(pos.asLong())!=null)data.setDirty(); var p=data.entries.get(pos.asLong());if(p!=null&&p.prepared&&!p.completed){p.removeOnComplete=true;data.schedule(pos.asLong(),level.getGameTime()+1);data.setDirty();return;}data.entries.remove(pos.asLong());
-        if(p!=null) { incompleteSync(level,pos,"");data.setDirty(); var d=Upgrades.definitions().get(p.id);if(!p.incomplete||d!=null&&d.placedIncomplete())p.escrow.forEach(s -> Block.popResource(level,pos,s.copy())); }
+        var data=UpgradeData.get(level);Downgrades.detach(level,pos);if(data.history.remove(pos.asLong())!=null)data.setDirty(); var p=data.entries.get(pos.asLong());
+        if(p==null)for(var entry:data.entries.entrySet())if(entry.getValue().partner==pos.asLong()){pos=BlockPos.of(entry.getKey());p=entry.getValue();break;}
+        if(p!=null&&p.prepared&&!p.completed){p.removeOnComplete=true;data.schedule(pos.asLong(),level.getGameTime()+1);data.setDirty();return;}data.entries.remove(pos.asLong());
+        if(p!=null) { incompleteSync(level,pos,"");clearPartnerOverlay(level,p);data.setDirty(); var d=Upgrades.definitions().get(p.id);if(!p.incomplete||d!=null&&d.placedIncomplete())for(var stack:p.escrow)Block.popResource(level,pos,stack.copy()); }
     }
     /** Player cancellation restores only a reversible, empty-inventory construction snapshot. */
     public static boolean cancel(ServerPlayer player,BlockPos pos){
-        var level=player.serverLevel();var data=UpgradeData.get(level);var p=data.entries.get(pos.asLong());
+        var level=player.serverLevel();pos=PairedBlocks.owner(level,pos);var data=UpgradeData.get(level);var p=data.entries.get(pos.asLong());
         if(p==null||p.committing||p.prepared||p.completed||player.isSpectator()||!player.mayBuild()||!level.mayInteract(player,pos)||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>Math.pow(player.blockInteractionRange()+1,2))return false;
         if(p.incomplete){
             var definition=Upgrades.definitions().get(p.id);
@@ -85,19 +100,30 @@ public final class UpgradeRuntime {
                 finally{TRANSFORMING.remove();p.committing=false;}
                 var blockItem=definition.source().asItem().getDefaultInstance();if(!player.getInventory().add(blockItem))player.drop(blockItem,false);
             }else{
-            if(!p.rollbackReady||!InventorySafety.isEmpty(level.getBlockEntity(pos))){
+            var partner=p.partner==Long.MIN_VALUE?null:BlockPos.of(p.partner);
+            if(!p.rollbackReady||!InventorySafety.isEmpty(level.getBlockEntity(pos))
+                ||partner!=null&&(!level.hasChunkAt(partner)||!InventorySafety.isEmpty(level.getBlockEntity(partner)))){
                 player.displayClientMessage(Component.literal("Cannot safely undo this construction: legacy state or transferred inventory. Materials already built into it are retained."),false);return false;
             }
             var current=level.getBlockState(pos);if(!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(current.getBlock()).toString().equals(p.target))return false;
             var source=net.minecraft.nbt.NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK),p.sourceState);
             p.committing=true;TRANSFORMING.set(true);
-            try{if(!level.setBlock(pos,source,3))return false;var be=level.getBlockEntity(pos);if(be!=null){be.loadWithComponents(p.sourceData,level.registryAccess());if(net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage"))dev.jco.upgrades.integration.SophisticatedStorage.restoreWoodFromSnapshot(be,p.sourceData);be.setChanged();level.sendBlockUpdated(pos,source,source,3);}}
+            try{
+                if(!level.setBlock(pos,source,2))return false;var be=level.getBlockEntity(pos);if(be!=null){be.loadWithComponents(p.sourceData,level.registryAccess());if(net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage"))dev.jco.upgrades.integration.SophisticatedStorage.restoreWoodFromSnapshot(be,p.sourceData);be.setChanged();level.sendBlockUpdated(pos,source,source,3);}
+                if(partner!=null){
+                    var partnerState=net.minecraft.nbt.NbtUtils.readBlockState(level.holderLookup(net.minecraft.core.registries.Registries.BLOCK),p.partnerSourceState);
+                    if(!level.setBlock(partner,partnerState,2))return false;var partnerEntity=level.getBlockEntity(partner);
+                    if(partnerEntity!=null){partnerEntity.loadWithComponents(p.partnerSourceData,level.registryAccess());if(net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage"))dev.jco.upgrades.integration.SophisticatedStorage.restoreWoodFromSnapshot(partnerEntity,p.partnerSourceData);partnerEntity.setChanged();level.sendBlockUpdated(partner,partnerState,partnerState,3);}
+                    level.updateNeighborsAt(partner,partnerState.getBlock());
+                }
+                level.updateNeighborsAt(pos,source.getBlock());
+            }
             finally{TRANSFORMING.set(false);p.committing=false;}
             }
         }
-        data.entries.remove(pos.asLong());data.setDirty();incompleteSync(level,pos,"");
+        data.entries.remove(pos.asLong());data.setDirty();incompleteSync(level,pos,"");clearPartnerOverlay(level,p);
         for(var deposited:p.escrow){var stack=deposited.copy();if(!player.getInventory().add(stack))player.drop(stack,false);}p.escrow.clear();
-        player.swing(InteractionHand.MAIN_HAND,true);level.playSound(null,pos,net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(),net.minecraft.sounds.SoundSource.PLAYERS,.35F,.8F);relevant(level,pos);return true;
+        player.swing(InteractionHand.MAIN_HAND,true);level.playSound(null,pos,net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK.value(),net.minecraft.sounds.SoundSource.PLAYERS,.35F,.8F);relevant(level,pos);if(p.partner!=Long.MIN_VALUE)relevant(level,BlockPos.of(p.partner));return true;
     }
     private static UpgradeData.Progress progress(ServerLevel level, BlockPos pos, UpgradeDefinition d, boolean create) {
         var data=UpgradeData.get(level); var p=data.entries.get(pos.asLong());
@@ -111,27 +137,33 @@ public final class UpgradeRuntime {
     public static void interact(PlayerInteractEvent.RightClickBlock e) {
         if(e.getHand()!=InteractionHand.MAIN_HAND)return;
         if(!(e.getEntity() instanceof ServerPlayer player)||!(e.getLevel() instanceof ServerLevel level))return;
-        var pos=e.getPos();var old=UpgradeData.get(level).entries.get(pos.asLong());if(occupied(level,pos)&&!(old!=null&&old.incomplete))return;
+        var clicked=e.getPos();var pos=PairedBlocks.owner(level,clicked);var old=UpgradeData.get(level).entries.get(pos.asLong());if(occupied(level,pos)&&!(old!=null&&old.incomplete))return;
         if(old!=null&&old.incomplete){e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);}
         if(old!=null&&actionInput.get()==InteractionMode.RIGHT&&player.isShiftKeyDown()&&player.getMainHandItem().isEmpty()){e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);cancel(player,pos);return;}
         var d=selected(player,pos);if(d==null)return;
+        if(!d.itemOutput()&&PairedBlocks.appearsPaired(level.getBlockState(pos)) && (PairedBlocks.partner(level,pos)==null || !PairedBlocks.compatiblePair(level.getBlockState(pos),d.target().defaultBlockState())))return;
         var stack=player.getMainHandItem();
         boolean clipboard=net.neoforged.fml.ModList.get().isLoaded("create")&&net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).toString().equals("create:clipboard");
-        if(!player.isShiftKeyDown() && old==null && !d.materials().isEmpty() && !clipboard)return;
+        boolean material=d.materials().stream().anyMatch(m->m.item().matches(stack));
+        boolean stageItem=d.stages().stream().anyMatch(s->s.item().matches(stack));
+        boolean accelerator=d.accelerators().stream().anyMatch(a->a.item.matches(stack));
+        if(old==null&&!material&&!clipboard&&!previewTool(stack,d))return;
+        if(old!=null&&!old.incomplete&&!material&&!stageItem&&!accelerator&&!clipboard&&!player.isShiftKeyDown())return;
         e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         if(!player.mayBuild()||!level.mayInteract(player,pos)||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>Math.pow(Math.min(d.hudRange(),player.blockInteractionRange()+1),2))return;
         if(clipboard) {
             try{dev.jco.upgrades.integration.CreateClipboard.save(stack,d);player.swinging=false;player.swing(e.getHand(),true);level.playSound(null,pos,net.minecraft.sounds.SoundEvents.BOOK_PAGE_TURN,net.minecraft.sounds.SoundSource.PLAYERS,.65F,1.2F);}catch(RuntimeException ex){error(player,ex);}return;
         }
         var p=progress(level,pos,d,false);if(p!=null&&p.incomplete&&!p.fingerprint.equals(d.fingerprint())){error(player,new IllegalStateException("Incomplete definition changed; restore definition or cancel administratively"));return;}
-        if(p==null)p=new UpgradeData.Progress(d);
+        if(p==null){p=new UpgradeData.Progress(d);var partner=PairedBlocks.partner(level,pos);if(partner!=null)p.partner=partner.asLong();}
+        if(p.partner!=Long.MIN_VALUE && !BlockPos.of(p.partner).equals(PairedBlocks.partner(level,pos))){error(player,new IllegalStateException("The paired block changed; remove the upgrade materials to restart"));return;}
         if(p.committing||p.completed)return;
         if(p.prepared){finishIfReady(level,pos,player,d,p);return;}
         if(p.lastAction==level.getGameTime())return;
         var data=UpgradeData.get(level);
         if(actionInput.get()==InteractionMode.LEFT&&!p.incomplete)return;
         if(!p.incomplete||d.placedIncomplete())for(int i=0;i<d.materials().size();i++) {
-            var m=d.materials().get(i);if(p.supplied[i]>=m.count()||!m.item().matches(stack))continue;
+            var m=d.materials().get(i);if(p.supplied[i]>=m.count()*(p.partner==Long.MIN_VALUE?1:2)||!m.item().matches(stack))continue;
             var item=stack.copyWithCount(1);p.supplied[i]++;p.lastAction=level.getGameTime();data.entries.put(pos.asLong(),p);
             if(!player.isCreative()){p.escrow.add(item.copy());stack.shrink(1);}data.setDirty();
             m.feedback().emit(level,net.minecraft.world.phys.Vec3.atCenterOf(pos),player,e.getHand(),item,false);
@@ -157,7 +189,7 @@ public final class UpgradeRuntime {
         finishIfReady(level,pos,player,d,p);relevant(level,pos);
     }
     private static boolean materialsDone(UpgradeDefinition d, UpgradeData.Progress p) {
-        for(int i=0;i<p.supplied.length;i++) if(p.supplied[i]<d.materials().get(i).count()) return false;
+        for(int i=0;i<p.supplied.length;i++) if(p.supplied[i]<d.materials().get(i).count()*(p.partner==Long.MIN_VALUE?1:2)) return false;
         return true;
     }
     private static <T extends Comparable<T>> BlockState copyProperty(BlockState from, BlockState to, Property<T> property) {
@@ -174,11 +206,17 @@ public final class UpgradeRuntime {
         if(p.incomplete) {
             if(d.manualCompletes()&&!d.stages().isEmpty()&&d.accelerators().isEmpty()&&p.stage>=d.stages().size())p.deadline=level.getGameTime();
             if(p.stage>=d.stages().size() && (d.buildTime()==0||p.deadline>=0&&p.deadline<=level.getGameTime())) {
-                if(!d.placedIncomplete())Downgrades.remember(level,pos,d,p);UpgradeData.get(level).entries.remove(pos.asLong());UpgradeData.get(level).setDirty();incompleteSync(level,pos,"");
+                if(!d.placedIncomplete()){
+                    if(p.partner==Long.MIN_VALUE)Downgrades.remember(level,pos,d,p);
+                    else Downgrades.rememberPair(level,pos,d,p);
+                }
+                UpgradeData.get(level).entries.remove(pos.asLong());UpgradeData.get(level).setDirty();incompleteSync(level,pos,"");clearPartnerOverlay(level,p);
+                if(p.partner!=Long.MIN_VALUE)relevant(level,BlockPos.of(p.partner));
                 d.completion().emit(level,net.minecraft.world.phys.Vec3.atCenterOf(pos),player,InteractionHand.MAIN_HAND,d.display(),false);
             }
             return;
         }
+        if(p.partner!=Long.MIN_VALUE){finishPair(level,pos,player,d,p);return;}
         var oldState=level.getBlockState(pos); if(!oldState.is(d.source())) return;
         var old=level.getBlockEntity(pos);
         CompoundTag backup=old==null ? new CompoundTag() : old.saveWithoutMetadata(level.registryAccess());
@@ -293,7 +331,7 @@ public final class UpgradeRuntime {
     public record Requirement(ItemStack display,int remaining) {}
     public static Requirement requirement(UpgradeDefinition d,UpgradeData.Progress p) {
         if(!p.fingerprint.equals(d.fingerprint()) || p.supplied.length!=d.materials().size()) return new Requirement(ItemStack.EMPTY,0);
-        for(int i=0;i<d.materials().size();i++) {var m=d.materials().get(i);if(p.supplied[i]<m.count()) return new Requirement(m.feedback().display(representative(m.item())),m.count()-p.supplied[i]);}
+        for(int i=0;i<d.materials().size();i++) {var m=d.materials().get(i);int count=m.count()*(p.partner==Long.MIN_VALUE?1:2);if(p.supplied[i]<count) return new Requirement(m.feedback().display(representative(m.item())),count-p.supplied[i]);}
         if(p.stage<d.stages().size()) {var s=d.stages().get(p.stage);return new Requirement(s.feedback().display(representative(s.item())),s.actions()-p.actions);}
         return new Requirement(d.display(),0);
     }
@@ -303,20 +341,81 @@ public final class UpgradeRuntime {
         return registry.getTag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM,net.minecraft.resources.ResourceLocation.parse(matcher.id().substring(1))))
             .flatMap(tag->tag.stream().findFirst()).map(holder->holder.value().getDefaultInstance()).orElse(ItemStack.EMPTY);
     }
-    /** A tag is a tool class, not the arbitrary first item in registry order. */
+    private record PairSide(BlockPos pos,BlockState source,BlockState result,BlockEntity old,BlockEntity target,CompoundTag backup) {}
+    private static PairSide preparePairSide(ServerLevel level,BlockPos pos,ServerPlayer player,UpgradeDefinition d) {
+        var source=level.getBlockState(pos);
+        if(!source.is(d.source()))throw new IllegalStateException("Both halves must still match the recipe");
+        var old=level.getBlockEntity(pos);
+        var backup=old==null?new CompoundTag():old.saveWithoutMetadata(level.registryAccess());
+        var result=d.target().defaultBlockState();
+        if(d.preserve())for(var property:source.getProperties())result=copyProperty(source,result,property);
+        var target=d.target() instanceof EntityBlock eb?eb.newBlockEntity(pos,result):null;
+        if(d.transfer()==null&&old!=null&&!InventorySafety.isEmpty(old))throw new IllegalStateException("Empty both inventories or configure a transfer mode");
+        if(old!=null&&net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage")
+            &&dev.jco.upgrades.integration.SophisticatedStorage.isStorage(old)&&!d.transferMode().equals("sophisticated_storage"))
+            throw new IllegalStateException("Sophisticated Storage needs the sophisticated_storage transfer mode");
+        if(d.transfer()!=null)d.transfer().accept(new TransferContext(level,pos,player,source,result,backup.copy(),target));
+        if(target==null&&!d.resultData().isEmpty())throw new IllegalStateException("Result data requires a block entity");
+        return new PairSide(pos,source,result,old,target,backup);
+    }
+    private static void installPairSide(ServerLevel level,PairSide side,UpgradeDefinition d) {
+        if(side.old instanceof Container c)c.clearContent();
+        else if(d.transferMode().equals("sophisticated_storage"))dev.jco.upgrades.integration.SophisticatedStorage.clear(side.old);
+        if(d.transferMode().equals("sophisticated_storage"))dev.jco.upgrades.integration.SophisticatedStorage.detach(level,side.pos,side.old);
+        if(!level.setBlock(side.pos,side.result,18))throw new IllegalStateException("Block replacement was rejected");
+        if(side.target!=null){
+            level.setBlockEntity(side.target);
+            if(d.transferMode().equals("sophisticated_storage"))dev.jco.upgrades.integration.SophisticatedStorage.installed(side.old,side.target,side.result);
+            if(!d.resultData().isEmpty()){var merged=side.target.saveWithoutMetadata(level.registryAccess());merged.merge(d.resultData());side.target.loadWithComponents(merged,level.registryAccess());}
+            side.target.setChanged();
+            level.sendBlockUpdated(side.pos,side.source,side.result,3);
+        }
+    }
+    private static void restorePairSide(ServerLevel level,PairSide side) {
+        level.setBlock(side.pos,side.source,18);
+        var restored=level.getBlockEntity(side.pos);
+        if(restored==null&&side.source.getBlock() instanceof EntityBlock eb){restored=eb.newBlockEntity(side.pos,side.source);if(restored!=null)level.setBlockEntity(restored);}
+        if(restored!=null){restored.loadWithComponents(side.backup,level.registryAccess());if(net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage"))dev.jco.upgrades.integration.SophisticatedStorage.restoreWoodFromSnapshot(restored,side.backup);restored.setChanged();}
+        level.sendBlockUpdated(side.pos,side.result,side.source,3);
+    }
+    private static void finishPair(ServerLevel level,BlockPos pos,ServerPlayer player,UpgradeDefinition d,UpgradeData.Progress p) {
+        var other=BlockPos.of(p.partner);
+        if(!other.equals(PairedBlocks.partner(level,pos))||!PairedBlocks.compatiblePair(level.getBlockState(pos),d.target().defaultBlockState())){error(player,new IllegalStateException("The paired block changed; cancel and restart this upgrade"));return;}
+        PairSide first,second;
+        try{first=preparePairSide(level,pos,player,d);second=preparePairSide(level,other,player,d);}
+        catch(RuntimeException ex){error(player,ex);return;}
+        TRANSFORMING.set(true);
+        try{
+            p.sourceState=net.minecraft.nbt.NbtUtils.writeBlockState(first.source);
+            p.partnerSourceState=net.minecraft.nbt.NbtUtils.writeBlockState(second.source);
+            installPairSide(level,first,d);installPairSide(level,second,d);
+            boolean builtin=d.transferMode().equals("copy_data")||d.transferMode().equals("copy_inventory")||d.transferMode().equals("sophisticated_storage");
+            p.sourceData=builtin&&first.old!=null?first.old.saveWithoutMetadata(level.registryAccess()):first.backup.copy();
+            p.partnerSourceData=builtin&&second.old!=null?second.old.saveWithoutMetadata(level.registryAccess()):second.backup.copy();
+            level.updateNeighborsAt(pos,d.target());level.updateNeighborsAt(other,d.target());
+            p.rollbackReady=d.transferMode().equals("copy_data")||d.transferMode().equals("copy_inventory")||d.transferMode().equals("sophisticated_storage")||d.transfer()==null;
+            p.incomplete=true;p.target=net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(d.target()).toString();
+            var data=UpgradeData.get(level);startTimer(level,pos,d,p);data.setDirty();incompleteSync(level,pos,p.target);
+            finishIfReady(level,pos,player,d,p);
+            relevant(level,other);
+            new Feedback().blockImpact(.1,10).sound("minecraft:block.anvil.place",.65F,1.15F).particles("minecraft:crit",14,.4,.06).emit(level,net.minecraft.world.phys.Vec3.atCenterOf(pos),player,InteractionHand.MAIN_HAND,d.display(),false);
+        }catch(RuntimeException ex){
+            if(d.transferMode().equals("sophisticated_storage")){dev.jco.upgrades.integration.SophisticatedStorage.failed(first.old);dev.jco.upgrades.integration.SophisticatedStorage.failed(second.old);}
+            restorePairSide(level,first);restorePairSide(level,second);error(player,ex);
+        }finally{TRANSFORMING.remove();}
+    }
     public static String label(StackMatcher matcher,ItemStack display) {
+        return label(matcher,display,"");
+    }
+    public static String label(StackMatcher matcher,ItemStack display,String override) {
+        if(!override.isBlank())return override;
         if(!matcher.id().startsWith("#"))return display.getHoverName().getString();
         String path=matcher.id().substring(1);
         path=path.substring(Math.max(path.lastIndexOf('/'),path.lastIndexOf(':'))+1);
-        return switch(path) {
-            case "pickaxes" -> "Pickaxe";
-            case "axes" -> "Axe";
-            case "shovels" -> "Shovel";
-            case "hoes" -> "Hoe";
-            case "hammers" -> "Hammer";
-            case "logs" -> "Log";
-            default -> display.isEmpty()?path.replace('_',' '):display.getHoverName().getString();
-        };
+        path=path.replace('_',' ');
+        if(path.endsWith("ies"))path=path.substring(0,path.length()-3)+"y";
+        else if(path.endsWith("s")&&path.length()>1)path=path.substring(0,path.length()-1);
+        return path.isEmpty()?"Item":Character.toUpperCase(path.charAt(0))+path.substring(1);
     }
     public static void tick(PlayerTickEvent.Post e) {
         if(!(e.getEntity() instanceof ServerPlayer player) || player.tickCount%5!=0) return;
@@ -329,15 +428,15 @@ public final class UpgradeRuntime {
         for(var entry:watched.entrySet()) if(level.hasChunkAt(entry.getKey().pos())) snapshot(player,entry.getKey().pos());
     }
     private static void snapshot(ServerPlayer player,BlockPos pos) {
-        var level=player.serverLevel();var d=selected(player,pos);
+        var level=player.serverLevel();var owner=PairedBlocks.owner(level,pos);var d=selected(player,pos);
         if(d==null) {var reverse=Downgrades.view(level,pos);var n=new CompoundTag();if(!reverse.isEmpty()){n.put("reverse",reverse);n.putDouble("range",6);n.putString("block",net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString());n.putBoolean("reverseOnly",true);}PacketDistributor.sendToPlayer(player,new UpgradePayload(level.dimension().location().toString(),pos,reverse.isEmpty()?List.of():List.of("Downgrade"),ItemStack.EMPTY,0,n));return;}
-        var p=progress(level,pos,d,false); if(p==null) p=new UpgradeData.Progress(d);
+        var p=progress(level,owner,d,false); if(p==null){p=new UpgradeData.Progress(d);var partner=PairedBlocks.partner(level,owner);if(partner!=null)p.partner=partner.asLong();}
         if(!p.fingerprint.equals(d.fingerprint()) || p.supplied.length!=d.materials().size()) {
             PacketDistributor.sendToPlayer(player,new UpgradePayload(level.dimension().location().toString(),pos,List.of("Upgrade paused: definition changed"),ItemStack.EMPTY,0));
             return;
         }
         var lines=new ArrayList<String>(); lines.add("Upgrade: "+d.title());
-        for(int i=0;i<d.materials().size();i++) { var m=d.materials().get(i); lines.add(m.item().id()+": "+p.supplied[i]+" / "+m.count()); }
+        for(int i=0;i<d.materials().size();i++) { var m=d.materials().get(i); lines.add(m.item().id()+": "+p.supplied[i]+" / "+m.count()*(p.partner==Long.MIN_VALUE?1:2)); }
         if(!materialsDone(d,p)) lines.add("Stage: MATERIAL — supply materials");
         else if(p.stage<d.stages().size()) {
             var s=d.stages().get(p.stage); lines.add("Stage "+(p.stage+1)+" / "+d.stages().size()+": "+s.type());
@@ -349,11 +448,15 @@ public final class UpgradeRuntime {
     }
     private static CompoundTag view(ServerLevel level,BlockPos pos,UpgradeDefinition d,UpgradeData.Progress p){
         var n=new CompoundTag();var reverse=Downgrades.view(level,pos);if(!reverse.isEmpty())n.put("reverse",reverse);n.putBoolean("blockUpgrade",true);n.putBoolean("compact",d.materials().isEmpty());n.putBoolean("canCancel",!p.prepared&&!p.completed&&(!p.incomplete||p.rollbackReady||d.placedIncomplete()));n.putString("block",net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(level.getBlockState(pos).getBlock()).toString());n.putString("id",d.id);n.putString("title",d.title());n.putString("description",d.description());n.putDouble("range",d.hudRange());n.put("icon",preview(level,pos,d).saveOptional(level.registryAccess()));
-        var all=routes(level.getBlockState(pos));n.putInt("routes",all.size());n.putInt("index",all.indexOf(d));n.putBoolean("locked",UpgradeData.get(level).entries.containsKey(pos.asLong()));n.putBoolean("incomplete",p.incomplete||d.itemOutput()&&d.materials().isEmpty());n.putBoolean("completed",p.completed);
+        var all=routes(level.getBlockState(pos));n.putInt("routes",all.size());n.putInt("index",all.indexOf(d));n.putBoolean("locked",UpgradeData.get(level).entries.containsKey(PairedBlocks.owner(level,pos).asLong()));n.putBoolean("incomplete",p.incomplete||d.itemOutput()&&d.materials().isEmpty());n.putBoolean("completed",p.completed);
         var rows=new net.minecraft.nbt.ListTag();
-        for(int i=0;i<d.materials().size();i++){var m=d.materials().get(i);var row=new CompoundTag();var display=m.feedback().display(representative(m.item()));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(m.item(),display));row.putString("input","RIGHT");row.putBoolean("material",true);row.putInt("have",p.supplied[i]);row.putInt("need",m.count());rows.add(row);}
-        if(materialsDone(d,p)&&p.stage<d.stages().size()){var action=d.stages().get(p.stage);var row=new CompoundTag();var display=action.feedback().display(representative(action.item()));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(action.item(),display));row.putString("input",action.feedback().input().name());row.putInt("have",p.actions);row.putInt("need",action.actions());rows.add(row);}
-        if(p.incomplete&&d.buildTime()>0){n.putLong("remaining",Math.max(0,p.deadline-level.getGameTime()));n.putInt("duration",d.buildTime());for(int i=0;i<d.accelerators().size();i++){var a=d.accelerators().get(i);if(i>=p.acceleratorCounts.length||p.acceleratorCounts[i]<0)continue;var row=new CompoundTag();var display=a.feedback().display(representative(a.item));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(a.item,display));row.putString("input",a.input().name());row.putInt("have",p.acceleratorCounts[i]);row.putInt("need",a.actions);row.putInt("reduction",a.reduction);rows.add(row);}}
+        for(int i=0;i<d.materials().size();i++){var m=d.materials().get(i);var row=new CompoundTag();var display=m.feedback().display(representative(m.item()));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(m.item(),display,m.feedback().label()));row.putString("matcher",m.item().id());row.putString("input","RIGHT");row.putBoolean("material",true);row.putInt("have",p.supplied[i]);row.putInt("need",m.count()*(p.partner==Long.MIN_VALUE?1:2));rows.add(row);}
+        if(materialsDone(d,p)&&p.stage<d.stages().size()){var action=d.stages().get(p.stage);var row=new CompoundTag();var display=action.feedback().display(representative(action.item()));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(action.item(),display,action.feedback().label()));row.putString("matcher",action.item().id());row.putString("input",action.feedback().input().name());row.putInt("have",p.actions);row.putInt("need",action.actions());rows.add(row);}
+        if(p.incomplete&&d.buildTime()>0){n.putLong("remaining",Math.max(0,p.deadline-level.getGameTime()));n.putInt("duration",d.buildTime());for(int i=0;i<d.accelerators().size();i++){var a=d.accelerators().get(i);if(i>=p.acceleratorCounts.length||p.acceleratorCounts[i]<0)continue;var row=new CompoundTag();var display=a.feedback().display(representative(a.item));row.put("icon",display.saveOptional(level.registryAccess()));row.putString("label",label(a.item,display,a.feedback().label()));row.putString("matcher",a.item.id());row.putString("input",a.input().name());row.putInt("have",p.acceleratorCounts[i]);row.putInt("need",a.actions);row.putInt("reduction",a.reduction);rows.add(row);}}
+        var tools=new net.minecraft.nbt.ListTag();
+        for(var stage:d.stages())tools.add(net.minecraft.nbt.StringTag.valueOf(stage.item().id()));
+        for(var accelerator:d.accelerators())tools.add(net.minecraft.nbt.StringTag.valueOf(accelerator.item.id()));
+        tools.add(net.minecraft.nbt.StringTag.valueOf(d.reverseTool()));n.put("tools",tools);
         n.put("rows",rows);var neighbors=new net.minecraft.nbt.ListTag();for(var route:all){var c=new CompoundTag();c.putString("title",route.title());c.put("icon",preview(level,pos,route).saveOptional(level.registryAccess()));neighbors.add(c);}n.put("carousel",neighbors);return n;
     }
     private static ItemStack preview(ServerLevel level,BlockPos pos,UpgradeDefinition definition){

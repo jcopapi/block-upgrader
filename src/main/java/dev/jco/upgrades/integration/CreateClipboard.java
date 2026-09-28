@@ -13,7 +13,7 @@ public final class CreateClipboard {
   var rows=new ArrayList<ClipboardEntry>();rows.add(new ClipboardEntry(false,Component.literal(d.title()+" Materials")));
   for(var m:d.materials()){
    var display=m.feedback().display(UpgradeRuntime.representative(m.item()));
-   rows.add(new ClipboardEntry(false,Component.literal(m.count()+"\u00d7 "+UpgradeRuntime.label(m.item(),display))));
+   rows.add(new ClipboardEntry(false,Component.literal(m.count()+"\u00d7 "+UpgradeRuntime.label(m.item(),display,m.feedback().label()))));
   }
   int first=pages.size();for(int i=0;i<rows.size();i+=10)pages.add(List.copyOf(rows.subList(i,Math.min(rows.size(),i+10))));
   if(pages.size()>50)throw new IllegalArgumentException("Clipboard full (50 pages)");

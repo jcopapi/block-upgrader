@@ -37,7 +37,7 @@ public final class WorldLabels {
             gui.pose().translate(x,y,0);gui.pose().scale(scale,scale,1);
             var rows=data.getList("rows",10);int yy=-12;
             for(var raw:rows){var row=(net.minecraft.nbt.CompoundTag)raw;if(row.getBoolean("material"))continue;var count=row.getInt("have")+"/"+row.getInt("need");int iconWidth="BOTH".equals(row.getString("input"))?24:13;int left=-(iconWidth+16+4+mc.font.width(count))/2;int width=InputIcons.draw(gui,row.getString("input"),left,yy+2);gui.renderItem(ItemStack.parseOptional(mc.level.registryAccess(),row.getCompound("icon")),left+width,yy);gui.drawString(mc.font,count,left+width+19,yy+4,0xFFE5CEAA,true);yy+=18;}
-            if(data.contains("duration")){float progress=1-data.getLong("remaining")/(float)Math.max(1,data.getInt("duration"));gui.fill(-25,yy,25,yy+3,0xAA303942);gui.fill(-25,yy,-25+(int)(50*Math.clamp(progress,0,1)),yy+3,0xFFBFA46E);}
+            if(data.contains("duration")){float progress=1-data.getLong("remaining")/(float)Math.max(1,data.getInt("duration"));gui.fill(-25,yy,25,yy+3,0xAA303942);gui.fill(-25,yy,-25+(int)(50*Math.clamp(progress,0,1)),yy+3,0xFF66C998);}
 
         } finally {gui.pose().popPose();}
     }

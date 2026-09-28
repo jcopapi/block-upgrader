@@ -34,6 +34,7 @@ public final class RecipeCatalog {
             for (var material : d.materials()) {
                 var row = new CompoundTag();
                 row.putString("item", material.item().id());
+                row.putString("label", material.feedback().label());
                 row.putInt("count", material.count());
                 row.put("icon", material.feedback().display(UpgradeRuntime.representative(material.item())).saveOptional(player.registryAccess()));
                 materials.add(row);
@@ -43,6 +44,7 @@ public final class RecipeCatalog {
             for (var stage : d.stages()) {
                 var row = new CompoundTag();
                 row.putString("item", stage.item().id());
+                row.putString("label", stage.feedback().label());
                 row.putString("input", stage.feedback().input().name());
                 row.putInt("actions", stage.actions());
                 row.putString("kind", "stage");
@@ -52,6 +54,7 @@ public final class RecipeCatalog {
             for (var accelerator : d.accelerators()) {
                 var row = new CompoundTag();
                 row.putString("item", accelerator.item.id());
+                row.putString("label", accelerator.feedback().label());
                 row.putString("input", accelerator.input().name());
                 row.putInt("actions", accelerator.actions);
                 row.putString("kind", "accelerator");

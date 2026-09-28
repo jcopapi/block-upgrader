@@ -7,9 +7,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 
 public final class UpgradeDefinition {
-    private String reverseTool="#jco:hammers";private int reverseHits=3;
+    private String reverseTool="#jco:hammers",reverseLabel="";private int reverseHits=3;
     public UpgradeDefinition downgrade(String tool,int hits){editable();net.minecraft.resources.ResourceLocation.parse(tool.startsWith("#")?tool.substring(1):tool);if(hits<1||hits>1000000)throw new IllegalArgumentException("Downgrade hits 1..1000000");reverseTool=tool;reverseHits=hits;return this;}
-    public String reverseTool(){return reverseTool;}public int reverseHits(){return reverseHits;}
+    public UpgradeDefinition downgrade(String tool,int hits,String label){downgrade(tool,hits);if(label==null||label.isBlank()||label.length()>80)throw new IllegalArgumentException("Downgrade label must be 1..80 characters");reverseLabel=label;return this;}
+    public String reverseTool(){return reverseTool;}public int reverseHits(){return reverseHits;}public String reverseLabel(){return reverseLabel;}
 
     private boolean manualCompletes, placedIncomplete;public UpgradeDefinition manualCompletes(boolean value){editable();manualCompletes=value;return this;}public boolean manualCompletes(){return manualCompletes;}
     /** Begin construction when a player places the ordinary source block. */
@@ -23,6 +24,7 @@ public final class UpgradeDefinition {
     public List<Accelerator> accelerators(){return Collections.unmodifiableList(accelerators);}
     public UpgradeDefinition acceleratorTool(String item,int actions,int reduction,Consumer<Accelerator> c){return accelerator(item,actions,reduction,1,0,c);}
     public UpgradeDefinition acceleratorItem(String item,int actions,int reduction,Consumer<Accelerator> c){return accelerator(item,actions,reduction,0,1,c);}
+    public UpgradeDefinition accelerator(String item,int actions,int reduction,Consumer<Accelerator> c){return accelerator(item,actions,reduction,0,0,c);}
     private UpgradeDefinition accelerator(String item,int actions,int reduction,int damage,int consume,Consumer<Accelerator> c){editable();if(accelerators.size()>=32)throw new IllegalArgumentException("Max 32 accelerators");var a=new Accelerator(item,actions,reduction,damage,consume);c.accept(a);a.freeze();accelerators.add(a);return this;}
 
     private final List<net.minecraft.world.item.ItemStack> outputs=new ArrayList<>();

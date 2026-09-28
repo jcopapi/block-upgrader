@@ -19,6 +19,9 @@ public final class Feedback {
     private int count=5;
     private double spread=.18,speed=.03;
     private ItemStack display=ItemStack.EMPTY;
+    private String label="";
+    public Feedback label(String value){edit();if(value==null||value.isBlank()||value.length()>80)throw new IllegalArgumentException("Action label must be 1..80 characters");label=value;return this;}
+    public String label(){return label;}
     private Feedback completed;
     public Feedback completed(java.util.function.Consumer<Feedback> configure){edit();completed=new Feedback();configure.accept(completed);return this;}
     public Feedback completed(){return completed;}

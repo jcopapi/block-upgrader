@@ -29,8 +29,9 @@ public final class IncompleteOverlay {
    var state=mc.level.getBlockState(pos);if(!net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(state.getBlock()).toString().equals(entry.getValue().block()))continue;
    pose.pushPose();pose.translate(pos.getX()-camera.x,pos.getY()-camera.y,pos.getZ()-camera.z);
    try{
-    var info=entry.getValue();float alpha=info.duration()>0?(float)Math.clamp((info.deadline()-mc.level.getGameTime())/(double)info.duration(),0,1):1;
-    var consumer=new SheetedDecalTextureGenerator(new FadeVertex(buffers.getBuffer(type),alpha*(.6F+.1F*(float)Math.sin(mc.level.getGameTime()*.06))),pose.last(),1);
+    float time=mc.level.getGameTime()+e.getPartialTick().getGameTimeDeltaPartialTick(false);
+    float alpha=.73F+.16F*(float)Math.sin(time*.24F);
+    var consumer=new SheetedDecalTextureGenerator(new FadeVertex(buffers.getBuffer(type),alpha),pose.last(),1);
     if(state.getRenderShape()==RenderShape.MODEL)mc.getBlockRenderer().renderBreakingTexture(state,pos,mc.level,pose,consumer);
     var be=mc.level.getBlockEntity(pos);if(be!=null)mc.getBlockEntityRenderDispatcher().render(be,e.getPartialTick().getGameTimeDeltaPartialTick(false),pose,ignored->consumer);
    } finally{pose.popPose();}

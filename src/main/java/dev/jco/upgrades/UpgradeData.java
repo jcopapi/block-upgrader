@@ -15,6 +15,8 @@ public final class UpgradeData extends SavedData {
         public long deadline=-1;public int[] acceleratorCounts=new int[0];
         public boolean incomplete, prepared, completed, removeOnComplete;
         public boolean rollbackReady;public CompoundTag sourceState=new CompoundTag(),sourceData=new CompoundTag();
+        public long partner=Long.MIN_VALUE;
+        public CompoundTag partnerSourceState=new CompoundTag(),partnerSourceData=new CompoundTag();
         public transient boolean committing;
         public final List<ItemStack> outputs=new ArrayList<>();
         public String target="";
@@ -41,6 +43,8 @@ public final class UpgradeData extends SavedData {
             p.incomplete=n.getBoolean("incomplete");p.target=n.getString("target");p.lastAction=n.contains("lastAction")?n.getLong("lastAction"):Long.MIN_VALUE;
             p.deadline=n.contains("deadline")?n.getLong("deadline"):-1;p.acceleratorCounts=n.getIntArray("accelerators");
             p.rollbackReady=n.getBoolean("rollbackReady");p.sourceState=n.getCompound("sourceState");p.sourceData=n.getCompound("sourceData");
+            p.partner=n.contains("partner")?n.getLong("partner"):Long.MIN_VALUE;
+            p.partnerSourceState=n.getCompound("partnerSourceState");p.partnerSourceData=n.getCompound("partnerSourceData");
             p.prepared=n.getBoolean("prepared");p.completed=n.getBoolean("completed");p.removeOnComplete=n.getBoolean("removeOnComplete");
             for(var item:n.getList("outputs",Tag.TAG_COMPOUND))p.outputs.add(ItemStack.parseOptional(lookup,(CompoundTag)item));
             p.supplied=n.getIntArray("supplied"); p.stage=Math.max(0,n.getInt("stage")); p.actions=Math.max(0,n.getInt("actions"));
@@ -57,6 +61,8 @@ public final class UpgradeData extends SavedData {
             n.putBoolean("incomplete",p.incomplete);n.putString("target",p.target);n.putLong("lastAction",p.lastAction);n.putIntArray("supplied",p.supplied); n.putInt("stage",p.stage); n.putInt("actions",p.actions);
             n.putLong("deadline",p.deadline);n.putIntArray("accelerators",p.acceleratorCounts);n.putBoolean("prepared",p.prepared);n.putBoolean("completed",p.completed);n.putBoolean("removeOnComplete",p.removeOnComplete);
             n.putBoolean("rollbackReady",p.rollbackReady);n.put("sourceState",p.sourceState);n.put("sourceData",p.sourceData);
+            n.putLong("partner",p.partner);
+            n.put("partnerSourceState",p.partnerSourceState);n.put("partnerSourceData",p.partnerSourceData);
             var out=new ListTag();p.outputs.forEach(i->{if(!i.isEmpty())out.add(i.save(lookup));});n.put("outputs",out);
             var items=new ListTag(); p.escrow.forEach(i -> { if (!i.isEmpty()) items.add(i.save(lookup)); }); n.put("escrow",items); list.add(n);
         });

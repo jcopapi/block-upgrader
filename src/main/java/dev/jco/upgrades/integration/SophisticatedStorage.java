@@ -6,10 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.WoodType;
-import net.p3pp3rf1y.sophisticatedstorage.block.ChestBlock;
 import net.p3pp3rf1y.sophisticatedstorage.block.StorageBlockBase;
 import net.p3pp3rf1y.sophisticatedstorage.block.StorageBlockEntity;
 import net.p3pp3rf1y.sophisticatedstorage.block.WoodStorageBlockEntity;
@@ -23,9 +21,6 @@ public final class SophisticatedStorage {
             || !(context.target() instanceof StorageBlockEntity)
             || !(context.resultState().getBlock() instanceof StorageBlockBase))
             throw new IllegalStateException("Sophisticated transfer requires two Sophisticated Storage blocks");
-        if (context.sourceState().hasProperty(ChestBlock.TYPE)
-            && context.sourceState().getValue(ChestBlock.TYPE) != ChestType.SINGLE)
-            throw new IllegalStateException("Separate double chests before upgrading");
         if (source.getControllerPos().isPresent())
             throw new IllegalStateException("Unlink this storage from its controller first");
         context.copyData();
