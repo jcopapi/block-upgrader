@@ -2,6 +2,8 @@
 
 A data-driven, reversible in-world block upgrade system for Minecraft 1.21.1 / NeoForge 21.1.x. Minecraft and NeoForge are the only required mods. KubeJS, Create, Sophisticated Storage, Iron Furnaces and Just Enough Items (JEI) are detected when installed.
 
+See [CHANGELOG.md](CHANGELOG.md) for release notes.
+
 ## Playing
 
 Look at a supported block while holding a tool to open its recipe. Scroll while holding the tool to choose a route. Right-click with the tool to select; right-click while holding each material to contribute one at a time. Other items still interact with the selected block normally. Once all materials are supplied, the block changes to its target. A timed recipe finishes automatically; three right-clicks with any pickaxe can accelerate the bundled furnace recipes. Sophisticated Storage tier changes are immediate.
