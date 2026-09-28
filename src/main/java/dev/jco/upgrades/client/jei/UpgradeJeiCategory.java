@@ -51,9 +51,17 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
 
     @Override public void setRecipe(IRecipeLayoutBuilder builder, UpgradeJeiRecipe recipe, IFocusGroup focuses) {
         builder.addInputSlot(SOURCE_X, SOURCE_Y).addItemStack(recipe.source()).setStandardSlotBackground();
+        if (net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage")) {
+            var variants = dev.jco.upgrades.integration.SophisticatedStorage.jeiWoodVariants(recipe.source());
+            if (!variants.isEmpty()) builder.addInvisibleIngredients(RecipeIngredientRole.INPUT).addItemStacks(variants);
+        }
         builder.addOutputSlot(RESULT_X, RESULT_Y).addItemStack(recipe.result())
             .setCustomRenderer(VanillaTypes.ITEM_STACK, largeOutput)
             .setBackground(largeOutputBackground, -3, -3);
+        if (net.neoforged.fml.ModList.get().isLoaded("sophisticatedstorage") && !recipe.fixedResultWood()) {
+            var variants = dev.jco.upgrades.integration.SophisticatedStorage.jeiWoodVariants(recipe.result());
+            if (!variants.isEmpty()) builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT).addItemStacks(variants);
+        }
         for (int i = 1; i < recipe.outputs().size(); i++)
             builder.addInvisibleIngredients(RecipeIngredientRole.OUTPUT).addItemStack(recipe.outputs().get(i));
 

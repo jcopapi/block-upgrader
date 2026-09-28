@@ -1,4 +1,4 @@
-{
+﻿{
     "source":  "sophisticatedstorage:barrel",
     "result":  "sophisticatedstorage:copper_barrel",
     "title":  "Upgrade to Copper Barrel",
@@ -9,10 +9,6 @@
                       {
                           "item":  "minecraft:copper_ingot",
                           "count":  6
-                      },
-                      {
-                          "item":  "minecraft:oak_planks",
-                          "count":  2
                       }
                   ],
     "transfer":  "sophisticated_storage",

@@ -2,7 +2,7 @@ package dev.jco.upgrades;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.ChestType;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -40,7 +40,7 @@ public final class PairedBlocks {
             ?(EnumProperty<BedPart>)enumeration:null;
     }
 
-    public static BlockPos partner(ServerLevel level, BlockPos pos) {
+    public static BlockPos partner(Level level, BlockPos pos) {
         var state = level.getBlockState(pos);
         var half = half(state);
         if(half!=null){
@@ -90,7 +90,7 @@ public final class PairedBlocks {
         return type(source)!=null&&facing(source)!=null&&type(target)!=null&&facing(target)!=null;
     }
 
-    public static BlockPos owner(ServerLevel level, BlockPos pos) {
+    public static BlockPos owner(Level level, BlockPos pos) {
         var other = partner(level, pos);
         return other == null || pos.asLong() < other.asLong() ? pos : other;
     }

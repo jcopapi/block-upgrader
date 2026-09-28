@@ -42,7 +42,7 @@ public final class UpgradeRuntime {
         return selected!=null&&selected.pos.equals(net.minecraft.core.GlobalPos.of(level.dimension(),pos))?all.stream().filter(d->d.id.equals(selected.id)).findFirst().orElse(all.getFirst()):all.getFirst();
     }
     public static boolean targeted(ServerPlayer player,BlockPos pos,double range){
-        if(player.isSpectator()||!previewTool(player.getMainHandItem(),selected(player,pos))||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>range*range)return false;
+        if(player.isSpectator()||!player.isShiftKeyDown()||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>range*range)return false;
         var hit=player.pick(Math.min(range,player.blockInteractionRange()),1,false);
         return hit instanceof BlockHitResult b&&hit.getType()==net.minecraft.world.phys.HitResult.Type.BLOCK&&b.getBlockPos().equals(pos);
     }
@@ -147,7 +147,7 @@ public final class UpgradeRuntime {
         boolean material=d.materials().stream().anyMatch(m->m.item().matches(stack));
         boolean stageItem=d.stages().stream().anyMatch(s->s.item().matches(stack));
         boolean accelerator=d.accelerators().stream().anyMatch(a->a.item.matches(stack));
-        if(old==null&&!material&&!clipboard&&!previewTool(stack,d))return;
+        if(old==null&&!material&&!clipboard&&!player.isShiftKeyDown())return;
         if(old!=null&&!old.incomplete&&!material&&!stageItem&&!accelerator&&!clipboard&&!player.isShiftKeyDown())return;
         e.setCanceled(true);e.setCancellationResult(InteractionResult.CONSUME);
         if(!player.mayBuild()||!level.mayInteract(player,pos)||player.distanceToSqr(net.minecraft.world.phys.Vec3.atCenterOf(pos))>Math.pow(Math.min(d.hudRange(),player.blockInteractionRange()+1),2))return;

@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.properties.WoodType;
+import java.util.List;
 import net.p3pp3rf1y.sophisticatedstorage.block.StorageBlockBase;
 import net.p3pp3rf1y.sophisticatedstorage.block.StorageBlockEntity;
 import net.p3pp3rf1y.sophisticatedstorage.block.WoodStorageBlockEntity;
@@ -48,6 +49,12 @@ public final class SophisticatedStorage {
         String name = resultData.getString("woodType");
         var type = WoodType.values().filter(value -> value.name().equals(name) || ("minecraft:" + value.name()).equals(name)).findFirst();
         return type.map(value -> net.p3pp3rf1y.sophisticatedstorage.item.WoodStorageBlockItem.setWoodType(stack, value)).orElse(stack);
+    }
+
+    /** Index each wood variant so JEI finds upgrades from a placed chest's item. */
+    public static List<ItemStack> jeiWoodVariants(ItemStack stack) {
+        if (!(stack.getItem() instanceof net.p3pp3rf1y.sophisticatedstorage.item.WoodStorageBlockItem)) return List.of();
+        return WoodType.values().map(type -> net.p3pp3rf1y.sophisticatedstorage.item.WoodStorageBlockItem.setWoodType(stack.copy(), type)).toList();
     }
 
     public static boolean isEmpty(BlockEntity entity) {

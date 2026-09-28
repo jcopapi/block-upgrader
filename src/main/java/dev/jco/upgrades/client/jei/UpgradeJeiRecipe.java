@@ -15,7 +15,7 @@ import net.neoforged.fml.ModList;
 /** Client-only presentation of a server-resolved definition. */
 public record UpgradeJeiRecipe(ResourceLocation id, String title, String description,
     ItemStack source, ItemStack result, List<ItemStack> outputs, List<Need> materials,
-    List<Need> work, int buildTime, String transfer, boolean placedIncomplete) {
+    List<Need> work, int buildTime, String transfer, boolean placedIncomplete, boolean fixedResultWood) {
     public record Need(String selector, int count, ItemStack icon, String input, String kind, String customLabel) {
         public String label() {
             var actual = selector.startsWith("#") ? icon : BuiltInRegistries.ITEM.get(ResourceLocation.parse(selector)).getDefaultInstance();
@@ -38,7 +38,7 @@ public record UpgradeJeiRecipe(ResourceLocation id, String title, String descrip
         var materials = readNeeds(tag, "materials", registry);
         var work = readNeeds(tag, "work", registry);
         return new UpgradeJeiRecipe(id, tag.getString("title"), tag.getString("description"), source,
-            result, List.copyOf(outputs), List.copyOf(materials), List.copyOf(work), tag.getInt("buildTime"), tag.getString("transfer"), tag.getBoolean("placedIncomplete"));
+            result, List.copyOf(outputs), List.copyOf(materials), List.copyOf(work), tag.getInt("buildTime"), tag.getString("transfer"), tag.getBoolean("placedIncomplete"),tag.getCompound("resultData").contains("woodType"));
     }
 
     private static List<Need> readNeeds(CompoundTag tag, String key, RegistryAccess registry) {

@@ -1,4 +1,4 @@
-{
+﻿{
     "source":  "sophisticatedstorage:chest",
     "result":  "sophisticatedstorage:copper_chest",
     "title":  "Upgrade to Copper Chest",
@@ -9,10 +9,6 @@
                       {
                           "item":  "minecraft:copper_ingot",
                           "count":  8
-                      },
-                      {
-                          "item":  "minecraft:oak_planks",
-                          "count":  2
                       }
                   ],
     "transfer":  "sophisticated_storage",

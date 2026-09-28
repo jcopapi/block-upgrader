@@ -1,4 +1,4 @@
-{
+﻿{
     "source":  "sophisticatedstorage:copper_barrel",
     "result":  "sophisticatedstorage:iron_barrel",
     "title":  "Upgrade to Iron Barrel",
@@ -9,10 +9,6 @@
                       {
                           "item":  "minecraft:iron_ingot",
                           "count":  6
-                      },
-                      {
-                          "item":  "minecraft:glass",
-                          "count":  2
                       }
                   ],
     "transfer":  "sophisticated_storage",

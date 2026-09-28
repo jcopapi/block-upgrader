@@ -1,4 +1,4 @@
-{
+﻿{
     "source":  "sophisticatedstorage:diamond_barrel",
     "result":  "sophisticatedstorage:netherite_barrel",
     "title":  "Upgrade to Netherite Barrel",
@@ -9,10 +9,6 @@
                       {
                           "item":  "minecraft:netherite_ingot",
                           "count":  2
-                      },
-                      {
-                          "item":  "minecraft:obsidian",
-                          "count":  4
                       }
                   ],
     "transfer":  "sophisticated_storage",

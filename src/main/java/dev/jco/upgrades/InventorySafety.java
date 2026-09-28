@@ -15,4 +15,11 @@ public final class InventorySafety {
             && dev.jco.upgrades.integration.SophisticatedStorage.isStorage(entity)
             && dev.jco.upgrades.integration.SophisticatedStorage.isEmpty(entity);
     }
+    /** Undo restores block metadata, never inventory items that were already withdrawn. */
+    public static void clearRestoredContents(BlockEntity entity) {
+        if (entity instanceof Container container) container.clearContent();
+        else if (entity != null && ModList.get().isLoaded("sophisticatedstorage")
+            && dev.jco.upgrades.integration.SophisticatedStorage.isStorage(entity))
+            dev.jco.upgrades.integration.SophisticatedStorage.clear(entity);
+    }
 }

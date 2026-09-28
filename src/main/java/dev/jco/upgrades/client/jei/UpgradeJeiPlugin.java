@@ -7,10 +7,12 @@ import java.util.List;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
+import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.runtime.IJeiRuntime;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Items;
 import org.slf4j.Logger;
 
 /** Optional JEI plugin; this class is only discovered when JEI is installed. */
@@ -27,9 +29,13 @@ public final class UpgradeJeiPlugin implements IModPlugin {
     @Override public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new UpgradeJeiCategory(registration.getJeiHelpers()));
     }
+    @Override public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
+        registration.addRecipeCatalysts(UpgradeJeiCategory.TYPE, Items.IRON_PICKAXE);
+    }
     @Override public void registerRecipes(IRecipeRegistration registration) {
         displayed = read();
         registration.addRecipes(UpgradeJeiCategory.TYPE, displayed);
+        LOGGER.info("Registered {} Block Upgrader recipes with JEI", displayed.size());
         if (Minecraft.getInstance().level != null) appliedRevision = RecipeCatalogClient.revision();
     }
     @Override public void onRuntimeAvailable(IJeiRuntime jei) {
@@ -49,6 +55,7 @@ public final class UpgradeJeiPlugin implements IModPlugin {
         if (!displayed.isEmpty()) manager.hideRecipes(UpgradeJeiCategory.TYPE, displayed);
         displayed = read();
         if (!displayed.isEmpty()) manager.addRecipes(UpgradeJeiCategory.TYPE, displayed);
+        LOGGER.info("Updated JEI Upgrade category with {} recipes", displayed.size());
         appliedRevision = RecipeCatalogClient.revision();
     }
 

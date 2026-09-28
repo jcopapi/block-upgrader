@@ -12,6 +12,14 @@
 - Redesigned the optional JEI **Upgrade** recipe view around source block, centered material list, and enlarged result. Material counts appear on item stacks; actions and accelerators sit below the main flow. Extra ingredients remain searchable and appear in an overflow tooltip.
 - Refined upgrade and incomplete-block HUD placement and animation, including paired material totals.
 - Removed routine action-bar notices and the duplicate world-action indicator to reduce visual clutter.
+- Restored Shift-based route selection and continuous material insertion while holding right-click. Actions with tools remain single-click.
+- Made optional JEI upgrades easier to find through an iron-pickaxe catalyst and indexing for Sophisticated Storage wood variants.
+
+### Fixed
+
+- Bundled Sophisticated Storage upgrades now require only the metal or gem for the next tier; extra planks, glass, and obsidian were removed.
+- Refund panels identify the original Sophisticated chest tier and wood, and reversing an emptied storage block no longer recreates items from its old inventory snapshot.
+- The selection outline covers both halves of a paired block.
 
 ## 0.1 - Initial release
 
