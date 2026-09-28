@@ -33,17 +33,18 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
     private static final int RESULT_X = 128, RESULT_Y = 28;
     private static final int WORK_Y = 84;
     private static final int VISIBLE_MATERIALS = 3, VISIBLE_WORK = 3;
-    private final IDrawable icon, sourceBackground, resultBackground;
+    private final IDrawable icon, sourceBackground, resultBackground, recipeArrow;
     private final IIngredientRenderer<ItemStack> sourceRenderer, resultRenderer;
 
     public UpgradeJeiCategory(mezz.jei.api.helpers.IJeiHelpers helpers) {
         var gui = helpers.getGuiHelper();
         icon = gui.createDrawableItemStack(new ItemStack(Items.IRON_PICKAXE));
+        recipeArrow = gui.getRecipeArrow();
         sourceBackground = new ScaledDrawable(gui.getSlotDrawable(), 1.5F);
         resultBackground = new ScaledDrawable(gui.getSlotDrawable(), 2F);
         var itemRenderer = helpers.getIngredientManager().getIngredientRenderer(VanillaTypes.ITEM_STACK);
-        sourceRenderer = new ScaledItemRenderer(itemRenderer, 1.5F);
-        resultRenderer = new ScaledItemRenderer(itemRenderer, 2F);
+        sourceRenderer = new ScaledItemRenderer(itemRenderer, 1.5F, -1F, -2F);
+        resultRenderer = new ScaledItemRenderer(itemRenderer, 2F, -1F, -1F);
     }
     @Override public RecipeType<UpgradeJeiRecipe> getRecipeType() { return TYPE; }
     @Override public Component getTitle() { return Component.literal("Upgrade"); }
@@ -106,8 +107,8 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
     }
 
     @Override public void draw(UpgradeJeiRecipe recipe, IRecipeSlotsView slots, GuiGraphics gui, double mouseX, double mouseY) {
-        gui.drawString(Minecraft.getInstance().font, ">", 57, 40, 0xFF555555, false);
-        gui.drawString(Minecraft.getInstance().font, ">", 108, 40, 0xFF555555, false);
+        recipeArrow.draw(gui, 49, 35);
+        recipeArrow.draw(gui, 100, 35);
         if (recipe.materials().size() > VISIBLE_MATERIALS)
             gui.drawString(Minecraft.getInstance().font, "+" + (recipe.materials().size() - VISIBLE_MATERIALS), 100, 63, 0xFF555555, false);
         if (recipe.work().size() > VISIBLE_WORK)
@@ -115,7 +116,7 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
     }
 
     @Override public void getTooltip(ITooltipBuilder lines, UpgradeJeiRecipe recipe, IRecipeSlotsView slots, double mouseX, double mouseY) {
-        if (mouseX >= 104 && mouseX < 122 && mouseY >= 34 && mouseY < 54) {
+        if (mouseX >= 100 && mouseX < 100 + recipeArrow.getWidth() && mouseY >= 35 && mouseY < 35 + recipeArrow.getHeight()) {
             lines.add(Component.literal(recipe.title()));
             if (!recipe.description().isBlank()) lines.add(Component.literal(recipe.description()));
             if (recipe.placedIncomplete()) lines.add(Component.literal("Finish after placement"));
@@ -145,12 +146,13 @@ public final class UpgradeJeiCategory implements IRecipeCategory<UpgradeJeiRecip
         }
     }
 
-    private record ScaledItemRenderer(IIngredientRenderer<ItemStack> original, float scale) implements IIngredientRenderer<ItemStack> {
+    private record ScaledItemRenderer(IIngredientRenderer<ItemStack> original, float scale, float offsetX, float offsetY) implements IIngredientRenderer<ItemStack> {
         @Override public int getWidth() { return Math.round(16 * scale); }
         @Override public int getHeight() { return Math.round(16 * scale); }
         @Override public void render(GuiGraphics gui, ItemStack stack) {
             gui.pose().pushPose();
             try {
+                gui.pose().translate(offsetX, offsetY, 0);
                 gui.pose().scale(scale, scale, 1);
                 original.render(gui, stack);
             } finally { gui.pose().popPose(); }
